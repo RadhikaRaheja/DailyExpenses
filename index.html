@@ -4,17 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Daily Expenses Tracker 🎀</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="appicon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#f8bbd0">
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="appicon.png" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="theme-color" content="#f8bbd0">
-
   <style>
     body {
-      background: url('https://i.pinimg.com/736x/58/09/12/5809128d95aee17fdad43073ef5495be.jpg') no-repeat center center fixed;
+      background: url('https://img.freepik.com/free-vector/hand-painted-watercolor-floral-frame_23-2148948917.jpg?t=st=1712843955~exp=1712847555~hmac=5f4d6c9ea5e80aa8fa8b6c05a36c8eeb81908ff49f342b2ad6c3a29f647efbf1&w=826') no-repeat center center fixed;
       background-size: cover;
       font-family: 'Nunito', sans-serif;
       padding: 1rem;
@@ -126,11 +125,19 @@
       const index = expenses.findIndex(e => e.id === id);
       const item = expenses[index];
 
-      const newAmount = prompt("Enter new amount", item.amount);
-      const newNote = prompt("Enter new note", item.note);
+      const choice = prompt("Edit amount or note? Type 'amount' or 'note':");
 
-      if (newAmount !== null) expenses[index].amount = parseFloat(newAmount);
-      if (newNote !== null) expenses[index].note = newNote;
+      if (choice === "amount") {
+        const newAmount = prompt("Enter new amount", item.amount);
+        if (newAmount !== null && !isNaN(parseFloat(newAmount))) {
+          expenses[index].amount = parseFloat(newAmount);
+        }
+      } else if (choice === "note") {
+        const newNote = prompt("Enter new note", item.note);
+        if (newNote !== null) {
+          expenses[index].note = newNote;
+        }
+      }
 
       saveExpenses(expenses);
       renderExpenses();
