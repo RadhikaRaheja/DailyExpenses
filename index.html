@@ -4,13 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Daily Expenses Tracker 🎀</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="appicon.png" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="theme-color" content="#f8bbd0">
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="appicon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="theme-color" content="#f8bbd0">
+
   <style>
     body {
       background: url('https://img.freepik.com/free-vector/hand-painted-watercolor-floral-frame_23-2148948917.jpg?t=st=1712843955~exp=1712847555~hmac=5f4d6c9ea5e80aa8fa8b6c05a36c8eeb81908ff49f342b2ad6c3a29f647efbf1&w=826') no-repeat center center fixed;
@@ -125,20 +126,24 @@
       const index = expenses.findIndex(e => e.id === id);
       const item = expenses[index];
 
-      const choice = prompt("Edit amount or note? Type 'amount' or 'note':");
+      const card = document.getElementById(`card-${id}`);
+      card.innerHTML = `
+        <div class="w-full">
+          <input id="edit-amount-${id}" type="number" class="w-full p-1 rounded mb-1 border border-pink-300" value="${item.amount}" />
+          <input id="edit-note-${id}" type="text" class="w-full p-1 rounded mb-1 border border-pink-300" value="${item.note}" />
+          <input id="edit-date-${id}" type="date" class="w-full p-1 rounded mb-2 border border-pink-300" value="${item.date}" />
+          <button onclick="saveEdit(${id})" class="bg-green-300 text-sm rounded-full px-3 py-1">✔ Save</button>
+        </div>
+      `;
+    }
 
-      if (choice === "amount") {
-        const newAmount = prompt("Enter new amount", item.amount);
-        if (newAmount !== null && !isNaN(parseFloat(newAmount))) {
-          expenses[index].amount = parseFloat(newAmount);
-        }
-      } else if (choice === "note") {
-        const newNote = prompt("Enter new note", item.note);
-        if (newNote !== null) {
-          expenses[index].note = newNote;
-        }
-      }
-
+    function saveEdit(id) {
+      const amount = parseFloat(document.getElementById(`edit-amount-${id}`).value);
+      const note = document.getElementById(`edit-note-${id}`).value;
+      const date = document.getElementById(`edit-date-${id}`).value;
+      const expenses = loadExpenses();
+      const index = expenses.findIndex(e => e.id === id);
+      expenses[index] = { id, amount, note, date };
       saveExpenses(expenses);
       renderExpenses();
     }
@@ -174,6 +179,7 @@
         total += entry.amount;
         const card = document.createElement("div");
         card.className = "bg-pink-100 rounded-xl p-3 shadow-md flex justify-between items-start";
+        card.id = `card-${entry.id}`;
         card.innerHTML = `
           <div>
             <div class="font-semibold">₹${entry.amount.toFixed(2)}</div>
