@@ -3,27 +3,38 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cute Expense Tracker</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0/dist/date-fns.min.js"></script>
+  <title>Daily Expenses Tracker 🎀</title>
   <link rel="icon" href="https://i.ibb.co/XzXYdY1/cute-bg.png" type="image/png">
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
-      font-family: 'Comic Sans MS', cursive, sans-serif;
-      background-image: url('https://i.ibb.co/XzXYdY1/cute-bg.png');
+      background-image: url('https://github.com/RadhikaRaheja/Gurukul-Images/blob/main/Background.jpg?raw=true');
       background-size: cover;
+      background-repeat: no-repeat;
       background-attachment: fixed;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
     }
     .glass {
-      background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(12px);
+    }
+    .tab-active {
+      background-color: #f8bbd0;
+      color: #6b21a8;
     }
   </style>
 </head>
-<body class="min-h-screen text-purple-800 p-4">
+<body class="min-h-screen p-4 text-purple-900">
   <div class="max-w-xl mx-auto">
-    <h1 class="text-3xl font-bold text-center mb-4">💸 Cute Expense Tracker</h1>
-    <div class="glass rounded-2xl p-4 mb-4">
+    <h1 class="text-3xl font-bold text-center mb-4">Daily Expenses Tracker 🎀</h1>
+
+    <div class="flex gap-2 justify-center mb-4">
+      <button id="addTab" class="px-4 py-2 rounded-full bg-white text-purple-700 border border-purple-300" onclick="switchTab('add')">➕ Enter Transaction</button>
+      <button id="viewTab" class="px-4 py-2 rounded-full bg-white text-purple-700 border border-purple-300" onclick="switchTab('view')">📖 View Transactions</button>
+    </div>
+
+    <!-- Add Transaction -->
+    <div id="addSection" class="glass rounded-2xl p-4 mb-4">
       <label class="block font-semibold mb-1">Select Date:</label>
       <input type="date" id="datePicker" class="w-full p-2 mb-2 rounded-xl border border-pink-300" />
       <input type="number" id="amount" placeholder="Expense Amount" class="w-full p-2 mb-2 rounded-xl border border-pink-300" />
@@ -31,7 +42,8 @@
       <button onclick="addExpense()" class="w-full bg-pink-400 hover:bg-pink-500 text-white p-2 rounded-xl">Add Expense</button>
     </div>
 
-    <div class="glass rounded-2xl p-4 mb-4">
+    <!-- View Transactions -->
+    <div id="viewSection" class="glass rounded-2xl p-4 hidden">
       <div class="flex justify-between items-center mb-2">
         <h2 class="text-xl font-bold">Total: ₹<span id="total">0.00</span></h2>
         <select id="filter" onchange="renderExpenses()" class="p-2 border border-pink-300 rounded-xl">
@@ -40,7 +52,7 @@
           <option value="date">Selected Date</option>
         </select>
       </div>
-      <div id="expensesList" class="max-h-64 overflow-y-auto"></div>
+      <div id="expensesList" class="max-h-64 overflow-y-auto space-y-2"></div>
     </div>
   </div>
 
@@ -51,8 +63,27 @@
     const expensesList = document.getElementById("expensesList");
     const totalDisplay = document.getElementById("total");
     const filter = document.getElementById("filter");
+    const addTab = document.getElementById("addTab");
+    const viewTab = document.getElementById("viewTab");
+    const addSection = document.getElementById("addSection");
+    const viewSection = document.getElementById("viewSection");
 
     datePicker.valueAsDate = new Date();
+
+    function switchTab(tab) {
+      if (tab === 'add') {
+        addSection.classList.remove('hidden');
+        viewSection.classList.add('hidden');
+        addTab.classList.add('tab-active');
+        viewTab.classList.remove('tab-active');
+      } else {
+        addSection.classList.add('hidden');
+        viewSection.classList.remove('hidden');
+        viewTab.classList.add('tab-active');
+        addTab.classList.remove('tab-active');
+        renderExpenses();
+      }
+    }
 
     function loadExpenses() {
       return JSON.parse(localStorage.getItem("expenses") || "[]");
@@ -72,6 +103,27 @@
       saveExpenses(expenses);
       amountInput.value = "";
       noteInput.value = "";
+      renderExpenses();
+    }
+
+    function deleteExpense(id) {
+      const expenses = loadExpenses().filter(e => e.id !== id);
+      saveExpenses(expenses);
+      renderExpenses();
+    }
+
+    function editExpense(id) {
+      const expenses = loadExpenses();
+      const index = expenses.findIndex(e => e.id === id);
+      const item = expenses[index];
+
+      const newAmount = prompt("Enter new amount", item.amount);
+      const newNote = prompt("Enter new note", item.note);
+
+      if (newAmount !== null) expenses[index].amount = parseFloat(newAmount);
+      if (newNote !== null) expenses[index].note = newNote;
+
+      saveExpenses(expenses);
       renderExpenses();
     }
 
@@ -105,11 +157,17 @@
       filtered.forEach(entry => {
         total += entry.amount;
         const card = document.createElement("div");
-        card.className = "bg-pink-200 rounded-xl p-2 mb-2";
+        card.className = "bg-pink-100 rounded-xl p-3 shadow-md flex justify-between items-start";
         card.innerHTML = `
-          <div class="font-semibold">₹${entry.amount.toFixed(2)}</div>
-          <div class="text-sm">${entry.note || "No note"}</div>
-          <div class="text-xs text-purple-700">${new Date(entry.date).toLocaleDateString()}</div>
+          <div>
+            <div class="font-semibold">₹${entry.amount.toFixed(2)}</div>
+            <div class="text-sm">${entry.note || "No note"}</div>
+            <div class="text-xs text-purple-600">${new Date(entry.date).toLocaleDateString()}</div>
+          </div>
+          <div class="space-x-1">
+            <button onclick="editExpense(${entry.id})" class="text-xs px-2 py-1 bg-purple-300 rounded-full">Edit</button>
+            <button onclick="deleteExpense(${entry.id})" class="text-xs px-2 py-1 bg-red-300 rounded-full">Delete</button>
+          </div>
         `;
         expensesList.appendChild(card);
       });
@@ -117,7 +175,8 @@
       totalDisplay.textContent = total.toFixed(2);
     }
 
-    renderExpenses();
+    // Initial tab
+    switchTab('add');
   </script>
 </body>
 </html>
