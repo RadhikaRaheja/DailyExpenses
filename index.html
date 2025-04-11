@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cute Expense Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0/dist/date-fns.min.js"></script>
+  <link rel="icon" href="https://i.ibb.co/XzXYdY1/cute-bg.png" type="image/png">
+  <style>
+    body {
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      background-image: url('https://i.ibb.co/XzXYdY1/cute-bg.png');
+      background-size: cover;
+      background-attachment: fixed;
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+    }
+  </style>
+</head>
+<body class="min-h-screen text-purple-800 p-4">
+  <div class="max-w-xl mx-auto">
+    <h1 class="text-3xl font-bold text-center mb-4">💸 Cute Expense Tracker</h1>
+    <div class="glass rounded-2xl p-4 mb-4">
+      <label class="block font-semibold mb-1">Select Date:</label>
+      <input type="date" id="datePicker" class="w-full p-2 mb-2 rounded-xl border border-pink-300" />
+      <input type="number" id="amount" placeholder="Expense Amount" class="w-full p-2 mb-2 rounded-xl border border-pink-300" />
+      <input type="text" id="note" placeholder="Comment / Note" class="w-full p-2 mb-2 rounded-xl border border-pink-300" />
+      <button onclick="addExpense()" class="w-full bg-pink-400 hover:bg-pink-500 text-white p-2 rounded-xl">Add Expense</button>
+    </div>
+
+    <div class="glass rounded-2xl p-4 mb-4">
+      <div class="flex justify-between items-center mb-2">
+        <h2 class="text-xl font-bold">Total: ₹<span id="total">0.00</span></h2>
+        <select id="filter" onchange="renderExpenses()" class="p-2 border border-pink-300 rounded-xl">
+          <option value="month">This Month</option>
+          <option value="week">This Week</option>
+          <option value="date">Selected Date</option>
+        </select>
+      </div>
+      <div id="expensesList" class="max-h-64 overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <script>
+    const datePicker = document.getElementById("datePicker");
+    const amountInput = document.getElementById("amount");
+    const noteInput = document.getElementById("note");
+    const expensesList = document.getElementById("expensesList");
+    const totalDisplay = document.getElementById("total");
+    const filter = document.getElementById("filter");
+
+    datePicker.valueAsDate = new Date();
+
+    function loadExpenses() {
+      return JSON.parse(localStorage.getItem("expenses") || "[]");
+    }
+
+    function saveExpenses(expenses) {
+      localStorage.setItem("expenses", JSON.stringify(expenses));
+    }
+
+    function addExpense() {
+      const date = datePicker.value;
+      const amount = parseFloat(amountInput.value);
+      const note = noteInput.value;
+      if (!date || !amount) return;
+      const expenses = loadExpenses();
+      expenses.unshift({ id: Date.now(), date, amount, note });
+      saveExpenses(expenses);
+      amountInput.value = "";
+      noteInput.value = "";
+      renderExpenses();
+    }
+
+    function renderExpenses() {
+      const expenses = loadExpenses();
+      const selectedFilter = filter.value;
+      const now = new Date();
+      const selectedDate = new Date(datePicker.value);
+
+      const filtered = expenses.filter(entry => {
+        const entryDate = new Date(entry.date);
+        if (selectedFilter === "month") {
+          return (
+            entryDate.getMonth() === now.getMonth() &&
+            entryDate.getFullYear() === now.getFullYear()
+          );
+        } else if (selectedFilter === "week") {
+          const start = new Date(now);
+          start.setDate(now.getDate() - now.getDay());
+          const end = new Date(start);
+          end.setDate(start.getDate() + 6);
+          return entryDate >= start && entryDate <= end;
+        } else if (selectedFilter === "date") {
+          return entryDate.toDateString() === selectedDate.toDateString();
+        }
+        return true;
+      });
+
+      let total = 0;
+      expensesList.innerHTML = "";
+      filtered.forEach(entry => {
+        total += entry.amount;
+        const card = document.createElement("div");
+        card.className = "bg-pink-200 rounded-xl p-2 mb-2";
+        card.innerHTML = `
+          <div class="font-semibold">₹${entry.amount.toFixed(2)}</div>
+          <div class="text-sm">${entry.note || "No note"}</div>
+          <div class="text-xs text-purple-700">${new Date(entry.date).toLocaleDateString()}</div>
+        `;
+        expensesList.appendChild(card);
+      });
+
+      totalDisplay.textContent = total.toFixed(2);
+    }
+
+    renderExpenses();
+  </script>
+</body>
+</html>
