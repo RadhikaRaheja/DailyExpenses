@@ -42,7 +42,11 @@
       100% { transform: translateX(0); }
     }
     .shimmer {
-  background: linear-gradient(90deg, #93c5fd, #c7d2fe); /* subtle blue gradient */
+  background: linear-gradient(90deg, transparent, transparent); /* no visible fill */
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: initial;
+  animation: shimmerMove 2s linear infinite;
 }
     }
     @keyframes shimmerMove {
