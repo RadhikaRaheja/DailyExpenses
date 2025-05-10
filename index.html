@@ -29,12 +29,39 @@
       background-color: #f8bbd0;
       color: #6b21a8;
     }
+
     .glow {
       animation: glowEffect 1.5s infinite alternate;
     }
+
     @keyframes glowEffect {
       0% { text-shadow: 0 0 5px hotpink; }
       100% { text-shadow: 0 0 15px deeppink; }
+    }
+
+    .shake {
+      animation: shake 0.6s ease-in-out infinite;
+    }
+
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      50% { transform: translateX(4px); }
+      75% { transform: translateX(-4px); }
+      100% { transform: translateX(0); }
+    }
+
+    .shimmer {
+      background: linear-gradient(90deg, hotpink, deeppink, hotpink);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmerMove 2s linear infinite;
+    }
+
+    @keyframes shimmerMove {
+      0% { background-position: 0% center; }
+      100% { background-position: 200% center; }
     }
   </style>
 </head>
@@ -64,7 +91,7 @@
           <div>
             <h2 class="text-xl font-bold">Total: ₹<span id="total">0.00</span></h2>
             <p id="monthlyProfit" class="text-sm text-green-700 mt-1"></p>
-            <p id="monthlyWarning" class="text-sm font-semibold text-pink-700 mt-2"></p>
+            <p id="monthlyWarning" class="text-sm font-semibold mt-2"></p>
           </div>
           <select id="filter" onchange="renderExpenses()" class="p-2 border border-pink-300 rounded-xl">
             <option value="month">This Month</option>
@@ -195,7 +222,7 @@
 
       profitDisplay.textContent = "";
       warningDisplay.textContent = "";
-      warningDisplay.classList.remove("glow");
+      warningDisplay.classList.remove("glow", "shake");
 
       const filtered = expenses.filter(entry => {
         const entryDate = new Date(entry.date);
@@ -244,8 +271,13 @@
           const profit = parseFloat(entry["Profit"]);
           profitDisplay.textContent = `Monthly Profit: ₹${profit.toFixed(2)}`;
           if (total > profit) {
-            warningDisplay.innerHTML = `💔 <span class="text-red-500">OMG! You're spending more than you're earning?!</span><br/>👛 Time for a budget-friendly spa day instead of shopping 💸`;
-            warningDisplay.classList.add("glow");
+            warningDisplay.innerHTML = `
+              <div class="shimmer text-pink-600 text-sm font-bold">
+                💸💔 Uh-oh, Drama Queen Alert!<br/>
+                Your expenses this month are <span class="underline">wayyy</span> over your income.<br/>
+                ✨ Manifest some savings & ditch those impulse buys, babe! 👛💅
+              </div>`;
+            warningDisplay.classList.add("glow", "shake");
           }
         } else {
           profitDisplay.textContent = "Monthly Profit: Not found";
