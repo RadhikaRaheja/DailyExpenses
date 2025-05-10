@@ -6,11 +6,11 @@
   <title>Daily Expenses Tracker 🎀</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="appicon.png" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="theme-color" content="#f8bbd0">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="appicon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#f8bbd0">
 
   <style>
     body {
@@ -53,7 +53,10 @@
       <!-- View Transactions -->
       <div id="viewSection" class="hidden">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold">Total: ₹<span id="total">0.00</span></h2>
+          <div>
+            <h2 class="text-xl font-bold">Total: ₹<span id="total">0.00</span></h2>
+            <p id="monthlyProfit" class="text-sm text-green-700 mt-1"></p>
+          </div>
           <select id="filter" onchange="renderExpenses()" class="p-2 border border-pink-300 rounded-xl">
             <option value="month">This Month</option>
             <option value="week">This Week</option>
@@ -148,11 +151,25 @@
       renderExpenses();
     }
 
-    function renderExpenses() {
+    async function fetchMonthlyProfit(monthName) {
+      try {
+        const res = await fetch("https://opensheet.elk.sh/1UMul8nt25GR8MUM-_EdwAR0q6Ne2ovPv_R-m1-CHeXw/Profit%20Sheet");
+        const data = await res.json();
+        const entry = data.find(row => row["Month"]?.trim() === monthName);
+        return entry ? parseFloat(entry["Profit"]) : null;
+      } catch (err) {
+        console.error("Error fetching profit:", err);
+        return null;
+      }
+    }
+
+    async function renderExpenses() {
       const expenses = loadExpenses();
       const selectedFilter = filter.value;
       const now = new Date();
       const selectedDate = new Date(datePicker.value);
+      const profitDisplay = document.getElementById("monthlyProfit");
+      profitDisplay.textContent = "";
 
       const filtered = expenses.filter(entry => {
         const entryDate = new Date(entry.date);
@@ -195,6 +212,16 @@
       });
 
       totalDisplay.textContent = total.toFixed(2);
+
+      if (selectedFilter === "month") {
+        const monthName = now.toLocaleString('default', { month: 'long' }) + " " + now.getFullYear();
+        const profit = await fetchMonthlyProfit(monthName);
+        if (profit !== null) {
+          profitDisplay.textContent = `Monthly Profit: ₹${profit.toFixed(2)}`;
+        } else {
+          profitDisplay.textContent = "Monthly Profit: Not found";
+        }
+      }
     }
 
     switchTab('add');
