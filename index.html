@@ -6,10 +6,6 @@
   <title>Daily Expenses Tracker 🎀</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="appicon.png" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#f8bbd0">
 
   <style>
@@ -29,20 +25,16 @@
       background-color: #f8bbd0;
       color: #6b21a8;
     }
-
     .glow {
       animation: glowEffect 1.5s infinite alternate;
     }
-
     @keyframes glowEffect {
       0% { text-shadow: 0 0 5px hotpink; }
       100% { text-shadow: 0 0 15px deeppink; }
     }
-
     .shake {
       animation: shake 0.6s ease-in-out infinite;
     }
-
     @keyframes shake {
       0% { transform: translateX(0); }
       25% { transform: translateX(-4px); }
@@ -50,7 +42,6 @@
       75% { transform: translateX(-4px); }
       100% { transform: translateX(0); }
     }
-
     .shimmer {
       background: linear-gradient(90deg, hotpink, deeppink, hotpink);
       background-size: 200% auto;
@@ -58,14 +49,40 @@
       -webkit-text-fill-color: transparent;
       animation: shimmerMove 2s linear infinite;
     }
-
     @keyframes shimmerMove {
       0% { background-position: 0% center; }
       100% { background-position: 200% center; }
     }
+    #dangerPopup {
+      display: none;
+      position: fixed;
+      top: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ff2d55;
+      color: white;
+      padding: 1.5rem 2rem;
+      border-radius: 1rem;
+      font-size: 1rem;
+      font-weight: bold;
+      box-shadow: 0 0 15px red;
+      z-index: 50;
+      animation: dangerShake 0.4s ease-in-out infinite;
+    }
+    @keyframes dangerShake {
+      0% { transform: translate(-50%, 0); }
+      25% { transform: translate(-50%, -4px); }
+      50% { transform: translate(-50%, 4px); }
+      75% { transform: translate(-50%, -4px); }
+      100% { transform: translate(-50%, 0); }
+    }
   </style>
 </head>
 <body class="min-h-screen text-purple-900 flex justify-center">
+  <audio id="alertSound" src="alert.mp3" preload="auto"></audio>
+
+  <div id="dangerPopup">🚨 Budget Breakdown Detected! You’re overspending! 💣</div>
+
   <div class="w-full max-w-xl">
     <div class="glass p-6">
       <h1 class="text-3xl font-bold text-center mb-6">Daily Expenses Tracker 🎀</h1>
@@ -76,7 +93,6 @@
         <button id="profitTab" class="px-4 py-2 rounded-full bg-white text-purple-700 border border-purple-300" onclick="switchTab('profit')">📊 Profits</button>
       </div>
 
-      <!-- Add Transaction -->
       <div id="addSection" class="mb-6">
         <label class="block font-semibold mb-1">Select Date:</label>
         <input type="date" id="datePicker" class="w-full p-2 mb-2 rounded-xl border border-pink-300" />
@@ -85,7 +101,6 @@
         <button onclick="addExpense()" class="w-full bg-pink-400 hover:bg-pink-500 text-white p-2 rounded-xl">Add Expense</button>
       </div>
 
-      <!-- View Transactions -->
       <div id="viewSection" class="hidden">
         <div class="flex justify-between items-center mb-4">
           <div>
@@ -102,7 +117,6 @@
         <div id="expensesList" class="max-h-64 overflow-y-auto space-y-3"></div>
       </div>
 
-      <!-- Profit View -->
       <div id="profitSection" class="hidden">
         <h2 class="text-xl font-bold mb-4">📊 Monthly Profits</h2>
         <div id="profitList" class="space-y-2 max-h-64 overflow-y-auto"></div>
@@ -123,6 +137,8 @@
     const addSection = document.getElementById("addSection");
     const viewSection = document.getElementById("viewSection");
     const profitSection = document.getElementById("profitSection");
+    const popup = document.getElementById("dangerPopup");
+    const sound = document.getElementById("alertSound");
 
     datePicker.valueAsDate = new Date();
 
@@ -204,10 +220,8 @@
     async function fetchProfitSheet() {
       try {
         const res = await fetch("https://opensheet.elk.sh/1UMul8nt25GR8MUM-_EdwAR0q6Ne2ovPv_R-m1-CHeXw/Profit%20Sheet");
-        const data = await res.json();
-        return data;
-      } catch (err) {
-        console.error("Failed to fetch profit data:", err);
+        return await res.json();
+      } catch {
         return [];
       }
     }
@@ -226,18 +240,15 @@
 
       const filtered = expenses.filter(entry => {
         const entryDate = new Date(entry.date);
-        if (selectedFilter === "month") {
-          return entryDate.getMonth() === now.getMonth() && entryDate.getFullYear() === now.getFullYear();
-        } else if (selectedFilter === "week") {
+        if (selectedFilter === "month") return entryDate.getMonth() === now.getMonth() && entryDate.getFullYear() === now.getFullYear();
+        if (selectedFilter === "week") {
           const start = new Date(now);
           start.setDate(now.getDate() - now.getDay());
           const end = new Date(start);
           end.setDate(start.getDate() + 6);
           return entryDate >= start && entryDate <= end;
-        } else if (selectedFilter === "date") {
-          return entryDate.toDateString() === selectedDate.toDateString();
         }
-        return true;
+        return entryDate.toDateString() === selectedDate.toDateString();
       });
 
       let total = 0;
@@ -256,8 +267,7 @@
           <div class="space-x-1">
             <button onclick="editExpense(${entry.id})" class="text-xs px-2 py-1 bg-purple-300 rounded-full">Edit</button>
             <button onclick="deleteExpense(${entry.id})" class="text-xs px-2 py-1 bg-red-300 rounded-full">Delete</button>
-          </div>
-        `;
+          </div>`;
         expensesList.appendChild(card);
       });
 
@@ -271,16 +281,19 @@
           const profit = parseFloat(entry["Profit"]);
           profitDisplay.textContent = `Monthly Profit: ₹${profit.toFixed(2)}`;
           if (total > profit) {
-            warningDisplay.innerHTML = `
-              <div class="shimmer text-pink-600 text-sm font-bold">
-                💸💔 Uh-oh, Drama Queen Alert!<br/>
-                Your expenses this month are <span class="underline">wayyy</span> over your income.<br/>
-                ✨ Manifest some savings & ditch those impulse buys, babe! 👛💅
-              </div>`;
-            warningDisplay.classList.add("glow", "shake");
+            popup.style.display = "block";
+            sound.play();
+            setTimeout(() => {
+              popup.style.display = "none";
+              warningDisplay.innerHTML = `
+                <div class="shimmer text-pink-600 text-sm font-bold">
+                  💸💔 Uh-oh, Drama Queen Alert!<br/>
+                  Your expenses this month are <span class="underline">wayyy</span> over your income.<br/>
+                  ✨ Manifest some savings & ditch those impulse buys, babe! 👛💅
+                </div>`;
+              warningDisplay.classList.add("glow", "shake");
+            }, 3000);
           }
-        } else {
-          profitDisplay.textContent = "Monthly Profit: Not found";
         }
       }
     }
