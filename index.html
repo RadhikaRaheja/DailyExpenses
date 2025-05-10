@@ -39,6 +39,7 @@
       <div class="flex gap-2 justify-center mb-6">
         <button id="addTab" class="px-4 py-2 rounded-full bg-white text-purple-700 border border-purple-300" onclick="switchTab('add')">➕ Enter Transaction</button>
         <button id="viewTab" class="px-4 py-2 rounded-full bg-white text-purple-700 border border-purple-300" onclick="switchTab('view')">📖 View Transactions</button>
+        <button id="profitTab" class="px-4 py-2 rounded-full bg-white text-purple-700 border border-purple-300" onclick="switchTab('profit')">📊 Profits</button>
       </div>
 
       <!-- Add Transaction -->
@@ -65,6 +66,12 @@
         </div>
         <div id="expensesList" class="max-h-64 overflow-y-auto space-y-3"></div>
       </div>
+
+      <!-- Profit View -->
+      <div id="profitSection" class="hidden">
+        <h2 class="text-xl font-bold mb-4">📊 Monthly Profits</h2>
+        <div id="profitList" class="space-y-2 max-h-64 overflow-y-auto"></div>
+      </div>
     </div>
   </div>
 
@@ -77,23 +84,32 @@
     const filter = document.getElementById("filter");
     const addTab = document.getElementById("addTab");
     const viewTab = document.getElementById("viewTab");
+    const profitTab = document.getElementById("profitTab");
     const addSection = document.getElementById("addSection");
     const viewSection = document.getElementById("viewSection");
+    const profitSection = document.getElementById("profitSection");
 
     datePicker.valueAsDate = new Date();
 
     function switchTab(tab) {
+      addSection.classList.add('hidden');
+      viewSection.classList.add('hidden');
+      profitSection.classList.add('hidden');
+      addTab.classList.remove('tab-active');
+      viewTab.classList.remove('tab-active');
+      profitTab.classList.remove('tab-active');
+
       if (tab === 'add') {
         addSection.classList.remove('hidden');
-        viewSection.classList.add('hidden');
         addTab.classList.add('tab-active');
-        viewTab.classList.remove('tab-active');
-      } else {
-        addSection.classList.add('hidden');
+      } else if (tab === 'view') {
         viewSection.classList.remove('hidden');
         viewTab.classList.add('tab-active');
-        addTab.classList.remove('tab-active');
         renderExpenses();
+      } else if (tab === 'profit') {
+        profitSection.classList.remove('hidden');
+        profitTab.classList.add('tab-active');
+        renderProfitData();
       }
     }
 
@@ -109,7 +125,7 @@
       const date = datePicker.value;
       const amount = parseFloat(amountInput.value);
       const note = noteInput.value;
-      if (!date || !amount) return;
+      if (!date || isNaN(amount)) return;
       const expenses = loadExpenses();
       expenses.unshift({ id: Date.now(), date, amount, note });
       saveExpenses(expenses);
@@ -128,7 +144,6 @@
       const expenses = loadExpenses();
       const index = expenses.findIndex(e => e.id === id);
       const item = expenses[index];
-
       const card = document.getElementById(`card-${id}`);
       card.innerHTML = `
         <div class="w-full">
@@ -151,15 +166,14 @@
       renderExpenses();
     }
 
-    async function fetchMonthlyProfit(monthName) {
+    async function fetchProfitSheet() {
       try {
         const res = await fetch("https://opensheet.elk.sh/1UMul8nt25GR8MUM-_EdwAR0q6Ne2ovPv_R-m1-CHeXw/Profit%20Sheet");
         const data = await res.json();
-        const entry = data.find(row => row["Month"]?.trim() === monthName);
-        return entry ? parseFloat(entry["Profit"]) : null;
+        return data;
       } catch (err) {
-        console.error("Error fetching profit:", err);
-        return null;
+        console.error("Failed to fetch profit data:", err);
+        return [];
       }
     }
 
@@ -174,10 +188,7 @@
       const filtered = expenses.filter(entry => {
         const entryDate = new Date(entry.date);
         if (selectedFilter === "month") {
-          return (
-            entryDate.getMonth() === now.getMonth() &&
-            entryDate.getFullYear() === now.getFullYear()
-          );
+          return entryDate.getMonth() === now.getMonth() && entryDate.getFullYear() === now.getFullYear();
         } else if (selectedFilter === "week") {
           const start = new Date(now);
           start.setDate(now.getDate() - now.getDay());
@@ -215,13 +226,29 @@
 
       if (selectedFilter === "month") {
         const monthName = now.toLocaleString('default', { month: 'long' }) + " " + now.getFullYear();
-        const profit = await fetchMonthlyProfit(monthName);
-        if (profit !== null) {
-          profitDisplay.textContent = `Monthly Profit: ₹${profit.toFixed(2)}`;
-        } else {
-          profitDisplay.textContent = "Monthly Profit: Not found";
-        }
+        const profitData = await fetchProfitSheet();
+        const entry = profitData.find(row => row["Month"]?.trim() === monthName);
+        profitDisplay.textContent = entry ? `Monthly Profit: ₹${parseFloat(entry["Profit"]).toFixed(2)}` : "Monthly Profit: Not found";
       }
+    }
+
+    async function renderProfitData() {
+      const container = document.getElementById("profitList");
+      container.innerHTML = "Loading...";
+      const data = await fetchProfitSheet();
+      if (!data.length) {
+        container.innerHTML = "<p class='text-red-500'>No data found.</p>";
+        return;
+      }
+      container.innerHTML = "";
+      data.forEach(row => {
+        if (row["Month"] && row["Profit"]) {
+          const div = document.createElement("div");
+          div.className = "bg-green-100 p-2 rounded-lg shadow";
+          div.textContent = `${row["Month"]}: ₹${parseFloat(row["Profit"]).toFixed(2)}`;
+          container.appendChild(div);
+        }
+      });
     }
 
     switchTab('add');
