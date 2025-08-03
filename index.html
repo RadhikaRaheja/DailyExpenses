@@ -193,24 +193,42 @@
       document.getElementById('profit-display').innerText = `Profit: ₹${row?.Profit || 0}`;
     }
 
-    async function fetchInvestment() {
-      const res = await fetch(sheetURL + 'Vendor%20Sales%20Record');
-      const data = await res.json();
-      const summary = document.getElementById('investment-summary');
-      summary.innerHTML = '';
-      const rows = ['Available Wallet', 'Reseller Amount Due', 'Client Due', 'Total Amount Invested'];
-      rows.forEach((label, i) => {
-        const key = Object.keys(data[i])[0];
-        summary.innerHTML += `<li>${label}: ₹${data[i][key + 1]}</li>`;
-      });
-      const vendors = data.slice(5).filter(r => {
-        const val = parseFloat(r['Balance']);
-        return !isNaN(val) && val !== 0;
-      });
-      const table = document.getElementById('vendor-table');
-      table.innerHTML = '<tr><th>Vendor Name</th><th>Balance</th></tr>';
-      vendors.forEach(v => table.innerHTML += `<tr><td>${v['Vendor name']}</td><td>₹${v['Balance']}</td></tr>`);
+   async function fetchInvestment() {
+  const res = await fetch(sheetURL + 'Vendor%20Sales%20Record');
+  const data = await res.json();
+  
+  // Fixed: Use correct property names parsed from OpenSheet
+  const summary = document.getElementById('investment-summary');
+  summary.innerHTML = '';
+  const labels = [
+    'Available Wallet',
+    'Reseller Amount Due',
+    'Client Due',
+    'Total Amount Invested'
+  ];
+  
+  // Row indexes 0, 1, 2, 3 correspond to I2–I5 summary rows
+  labels.forEach((label, i) => {
+    const key = Object.keys(data[i])[1]; // second field (column J)
+    const amt = parseFloat(data[i][key]) || 0;
+    summary.innerHTML += `<li>${label}: ₹${amt.toFixed(2)}</li>`;
+  });
+
+  const vendorTable = document.getElementById('vendor-table');
+  vendorTable.innerHTML = '<tr><th>Vendor Name</th><th>Balance</th></tr>';
+
+  data.slice(5).forEach(row => {
+    const balance = parseFloat(row['Balance']);
+    const name = row['Vendor name'];
+    if (!isNaN(balance) && balance !== 0 && name) {
+      vendorTable.innerHTML += `
+        <tr>
+          <td>${name}</td>
+          <td>₹${balance.toFixed(2)}</td>
+        </tr>`;
     }
+  });
+}
 
     function populateMonthDropdown(id) {
       const dates = [...new Set(transactions.map(t => t.date.substring(0, 7)))];
