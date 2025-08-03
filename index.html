@@ -58,3 +58,167 @@
     }
     table {
       width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+    .inline-input {
+      border: none;
+      background: transparent;
+      width: 90%;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Daily Expenses Tracker 🎀</h1>
+    <nav>
+      <button onclick="switchTab('add')">➕ Add</button>
+      <button onclick="switchTab('view')">📊 View</button>
+      <button onclick="switchTab('profit')">💰 Profit</button>
+      <button onclick="switchTab('investment')">📈 Investment</button>
+    </nav>
+    <div id="add" class="section active">
+      <div class="field">
+        <label for="date">Date:</label>
+        <input type="date" id="date" />
+      </div>
+      <div class="field">
+        <label for="amount">Expense Amount:</label>
+        <input type="number" id="amount" />
+      </div>
+      <div class="field">
+        <label for="note">Comments:</label>
+        <textarea id="note"></textarea>
+      </div>
+      <button onclick="addTransaction()">Save</button>
+    </div>
+    <div id="view" class="section">
+      <div class="field">
+        <label for="view-month">Month & Year:</label>
+        <select id="view-month"></select>
+      </div>
+      <h3 id="total-expense">Total: ₹0</h3>
+      <table id="view-table"></table>
+    </div>
+    <div id="profit" class="section">
+      <div class="field">
+        <label for="profit-month">Month & Year:</label>
+        <select id="profit-month" onchange="fetchProfit()"></select>
+      </div>
+      <h3 id="profit-display">Profit: ₹0</h3>
+    </div>
+    <div id="investment" class="section">
+      <h3>Summary</h3>
+      <ul id="investment-summary"></ul>
+      <h3>Vendor Balances</h3>
+      <table id="vendor-table"></table>
+    </div>
+  </div>
+  <script>
+    let transactions = [];
+    const sheetURL = 'https://opensheet.elk.sh/1UMul8nt25GR8MUM-_EdwAR0q6Ne2ovPv_R-m1-CHeXw/';
+
+    function switchTab(tab) {
+      document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+      document.getElementById(tab).classList.add('active');
+      if (tab === 'view') fetchView();
+      if (tab === 'profit') fetchMonthOptions();
+      if (tab === 'investment') fetchInvestment();
+    }
+
+    function addTransaction() {
+      const date = document.getElementById('date').value;
+      const amount = parseFloat(document.getElementById('amount').value);
+      const note = document.getElementById('note').value;
+      if (!date || isNaN(amount)) return alert("Enter valid date and amount");
+      transactions.push({ date, amount, note });
+      document.getElementById('date').value = '';
+      document.getElementById('amount').value = '';
+      document.getElementById('note').value = '';
+      alert('Transaction added.');
+    }
+
+    function fetchView() {
+      const selector = document.getElementById('view-month');
+      const month = selector.value;
+      const data = transactions.filter(t => t.date.startsWith(month));
+      let total = 0;
+      const table = document.getElementById('view-table');
+      table.innerHTML = `<tr><th>Date</th><th>Amount</th><th>Note</th><th>Edit</th></tr>`;
+      data.forEach((t, i) => {
+        total += t.amount;
+        table.innerHTML += `<tr>
+          <td><input class='inline-input' value='${t.date}' onchange='update(${i}, "date", this.value)' /></td>
+          <td><input class='inline-input' value='${t.amount}' onchange='update(${i}, "amount", parseFloat(this.value))' /></td>
+          <td><input class='inline-input' value='${t.note}' onchange='update(${i}, "note", this.value)' /></td>
+          <td><button onclick='remove(${i})'>❌</button></td>
+        </tr>`;
+      });
+      document.getElementById('total-expense').innerText = `Total: ₹${total}`;
+      populateMonthDropdown('view-month');
+    }
+
+    function update(index, field, value) {
+      transactions[index][field] = value;
+    }
+
+    function remove(index) {
+      transactions.splice(index, 1);
+      fetchView();
+    }
+
+    async function fetchMonthOptions() {
+      const res = await fetch(sheetURL + 'Profit%20Sheet');
+      const data = await res.json();
+      const options = [...new Set(data.map(r => r.Month))];
+      const dropdowns = ['profit-month', 'view-month'];
+      dropdowns.forEach(id => {
+        const sel = document.getElementById(id);
+        sel.innerHTML = '';
+        options.forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
+        sel.value = options[options.length - 1];
+      });
+      fetchProfit();
+    }
+
+    async function fetchProfit() {
+      const month = document.getElementById('profit-month').value;
+      const res = await fetch(sheetURL + 'Profit%20Sheet');
+      const data = await res.json();
+      const row = data.find(r => r.Month === month);
+      document.getElementById('profit-display').innerText = `Profit: ₹${row?.Profit || 0}`;
+    }
+
+    async function fetchInvestment() {
+      const res = await fetch(sheetURL + 'Vendor%20Sales%20Record');
+      const data = await res.json();
+      const summary = document.getElementById('investment-summary');
+      summary.innerHTML = '';
+      const rows = ['Available Wallet', 'Reseller Amount Due', 'Client Due', 'Total Amount Invested'];
+      rows.forEach((label, i) => {
+        const key = Object.keys(data[i])[0];
+        summary.innerHTML += `<li>${label}: ₹${data[i][key + 1]}</li>`;
+      });
+      const vendors = data.slice(5).filter(r => {
+        const val = parseFloat(r['Balance']);
+        return !isNaN(val) && val !== 0;
+      });
+      const table = document.getElementById('vendor-table');
+      table.innerHTML = '<tr><th>Vendor Name</th><th>Balance</th></tr>';
+      vendors.forEach(v => table.innerHTML += `<tr><td>${v['Vendor name']}</td><td>₹${v['Balance']}</td></tr>`);
+    }
+
+    function populateMonthDropdown(id) {
+      const dates = [...new Set(transactions.map(t => t.date.substring(0, 7)))];
+      const sel = document.getElementById(id);
+      sel.innerHTML = '';
+      dates.forEach(d => sel.innerHTML += `<option value='${d}'>${d}</option>`);
+      sel.value = dates[dates.length - 1];
+    }
+  </script>
+</body>
+</html>
