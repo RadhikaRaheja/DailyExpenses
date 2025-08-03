@@ -3,329 +3,222 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap">
   <title>Daily Expenses Tracker 🎀</title>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <meta name="theme-color" content="#f8bbd0">
-
   <style>
     body {
+      margin: 0;
+      font-family: 'Quicksand', sans-serif;
       background: url('https://i.pinimg.com/736x/58/09/12/5809128d95aee17fdad43073ef5495be.jpg') no-repeat center center fixed;
       background-size: cover;
-      font-family: 'Nunito', sans-serif;
-      padding: 1rem;
     }
-    .glass {
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(14px);
-      border-radius: 1.5rem;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    .app {
+      max-width: 800px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 20px;
+      padding: 20px;
+      margin-top: 40px;
     }
-    .tab-active {
-  color: #1e3a8a;            /* dark blue */
-}
-    .glow {
-      animation: glowEffect 1.5s infinite alternate;
+    h1 {
+      text-align: center;
+      color: #e91e63;
     }
-    @keyframes glowEffect {
-      0% { text-shadow: 0 0 5px #6366f1; }
-  100% { text-shadow: 0 0 15px #6366f1; }
-}
-    .shake {
-      animation: shake 0.6s ease-in-out infinite;
+    nav {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
     }
-    @keyframes shake {
-      0% { transform: translateX(0); }
-      25% { transform: translateX(-4px); }
-      50% { transform: translateX(4px); }
-      75% { transform: translateX(-4px); }
-      100% { transform: translateX(0); }
+    nav button {
+      background-color: #f8bbd0;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
     }
-    .shimmer {
-  background: linear-gradient(90deg, transparent, transparent); /* no visible fill */
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: initial;
-  animation: shimmerMove 2s linear infinite;
-}
+    .section {
+      display: none;
     }
-    @keyframes shimmerMove {
-      0% { background-position: 0% center; }
-      100% { background-position: 200% center; }
+    .active {
+      display: block;
     }
-    #dangerPopup {
-  display: none;
-  position: fixed;
-  top: 20%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(135deg, #ff2d55, #ff5e78);
-  color: white;
-  padding: 2rem 2.5rem;
-  border-radius: 1.5rem;
-  font-size: 1.2rem;
-  font-weight: bold;
-  box-shadow: 0 0 25px #ff1a4d;
-  z-index: 999;
-  animation: dangerShake 0.6s ease-in-out infinite;
-  text-align: center;
-  max-width: 90%;
-}
-    @keyframes dangerShake {
-      0% { transform: translate(-50%, 0); }
-      25% { transform: translate(-50%, -4px); }
-      50% { transform: translate(-50%, 4px); }
-      75% { transform: translate(-50%, -4px); }
-      100% { transform: translate(-50%, 0); }
+    .field {
+      margin: 10px 0;
+    }
+    .field label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+    .inline-input {
+      border: none;
+      background: transparent;
+      width: 90%;
     }
   </style>
 </head>
-<body class="min-h-screen text-purple-900 flex justify-center">
-  <audio id="alertSound" src="alert.mp3" preload="auto"></audio>
-
-  <div id="dangerPopup">🚨 Budget Breakdown Detected! You’re overspending! 💣</div>
-
-  <div class="w-full max-w-xl">
-    <div class="glass p-6">
-      <h1 class="text-3xl font-bold text-center mb-6">Daily Expenses Tracker 🎀</h1>
-
-      <div class="flex gap-2 justify-center mb-6">
-        <button id="addTab" class="px-4 py-2 rounded-full bg-white text-purple-700 border border-purple-300" onclick="switchTab('add')">➕ Enter Transaction</button>
-        <button id="viewTab" class="px-4 py-2 rounded-full bg-white text-purple-700 border border-purple-300" onclick="switchTab('view')">📖 View Transactions</button>
-        <button id="profitTab" class="px-4 py-2 rounded-full bg-white text-purple-700 border border-purple-300" onclick="switchTab('profit')">📊 Profits</button>
+<body>
+  <div class="app">
+    <h1>Daily Expenses Tracker 🎀</h1>
+    <nav>
+      <button onclick="switchTab('add')">➕ Add</button>
+      <button onclick="switchTab('view')">📊 View</button>
+      <button onclick="switchTab('profit')">💰 Profit</button>
+      <button onclick="switchTab('investment')">📈 Investment</button>
+    </nav>
+    <div id="add" class="section active">
+      <div class="field">
+        <label for="date">Date:</label>
+        <input type="date" id="date" />
       </div>
-
-      <div id="addSection" class="mb-6">
-        <label class="block font-semibold mb-1">Select Date:</label>
-        <input type="date" id="datePicker" class="w-full p-2 mb-2 rounded-xl border border-pink-300" />
-        <input type="number" id="amount" placeholder="Expense Amount" class="w-full p-2 mb-2 rounded-xl border border-pink-300" />
-        <input type="text" id="note" placeholder="Comment / Note" class="w-full p-2 mb-2 rounded-xl border border-pink-300" />
-        <button onclick="addExpense()" class="w-full bg-pink-400 hover:bg-pink-500 text-white p-2 rounded-xl">Add Expense</button>
+      <div class="field">
+        <label for="amount">Expense Amount:</label>
+        <input type="number" id="amount" />
       </div>
-
-      <div id="viewSection" class="hidden">
-        <div class="flex justify-between items-center mb-4">
-          <div>
-            <h2 class="text-xl font-bold">Total: ₹<span id="total">0.00</span></h2>
-            <p id="monthlyProfit" class="text-sm text-green-700 mt-1"></p>
-            <p id="monthlyWarning" class="text-sm font-semibold mt-2"></p>
-          </div>
-          <select id="filter" onchange="renderExpenses()" class="p-2 border border-pink-300 rounded-xl">
-            <option value="month">This Month</option>
-            <option value="week">This Week</option>
-            <option value="date">Selected Date</option>
-          </select>
-        </div>
-        <div id="expensesList" class="max-h-64 overflow-y-auto space-y-3"></div>
+      <div class="field">
+        <label for="note">Comments:</label>
+        <textarea id="note"></textarea>
       </div>
-
-      <div id="profitSection" class="hidden">
-        <h2 class="text-xl font-bold mb-4">📊 Monthly Profits</h2>
-        <div id="profitList" class="space-y-2 max-h-64 overflow-y-auto"></div>
+      <button onclick="addTransaction()">Save</button>
+    </div>
+    <div id="view" class="section">
+      <div class="field">
+        <label for="view-month">Month & Year:</label>
+        <select id="view-month"></select>
       </div>
+      <h3 id="total-expense">Total: ₹0</h3>
+      <table id="view-table"></table>
+    </div>
+    <div id="profit" class="section">
+      <div class="field">
+        <label for="profit-month">Month & Year:</label>
+        <select id="profit-month" onchange="fetchProfit()"></select>
+      </div>
+      <h3 id="profit-display">Profit: ₹0</h3>
+    </div>
+    <div id="investment" class="section">
+      <h3>Summary</h3>
+      <ul id="investment-summary"></ul>
+      <h3>Vendor Balances</h3>
+      <table id="vendor-table"></table>
     </div>
   </div>
-
   <script>
-    const datePicker = document.getElementById("datePicker");
-    const amountInput = document.getElementById("amount");
-    const noteInput = document.getElementById("note");
-    const expensesList = document.getElementById("expensesList");
-    const totalDisplay = document.getElementById("total");
-    const filter = document.getElementById("filter");
-    const addTab = document.getElementById("addTab");
-    const viewTab = document.getElementById("viewTab");
-    const profitTab = document.getElementById("profitTab");
-    const addSection = document.getElementById("addSection");
-    const viewSection = document.getElementById("viewSection");
-    const profitSection = document.getElementById("profitSection");
-    const popup = document.getElementById("dangerPopup");
-    const sound = document.getElementById("alertSound");
-
-    datePicker.valueAsDate = new Date();
+    let transactions = [];
+    const sheetURL = 'https://opensheet.elk.sh/1UMul8nt25GR8MUM-_EdwAR0q6Ne2ovPv_R-m1-CHeXw/';
 
     function switchTab(tab) {
-      addSection.classList.add('hidden');
-      viewSection.classList.add('hidden');
-      profitSection.classList.add('hidden');
-      addTab.classList.remove('tab-active');
-      viewTab.classList.remove('tab-active');
-      profitTab.classList.remove('tab-active');
-
-      if (tab === 'add') {
-        addSection.classList.remove('hidden');
-        addTab.classList.add('tab-active');
-      } else if (tab === 'view') {
-        viewSection.classList.remove('hidden');
-        viewTab.classList.add('tab-active');
-        renderExpenses();
-      } else if (tab === 'profit') {
-        profitSection.classList.remove('hidden');
-        profitTab.classList.add('tab-active');
-        renderProfitData();
-      }
+      document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+      document.getElementById(tab).classList.add('active');
+      if (tab === 'view') fetchView();
+      if (tab === 'profit') fetchMonthOptions();
+      if (tab === 'investment') fetchInvestment();
     }
 
-    function loadExpenses() {
-      return JSON.parse(localStorage.getItem("expenses") || "[]");
+    function addTransaction() {
+      const date = document.getElementById('date').value;
+      const amount = parseFloat(document.getElementById('amount').value);
+      const note = document.getElementById('note').value;
+      if (!date || isNaN(amount)) return alert("Enter valid date and amount");
+      transactions.push({ date, amount, note });
+      document.getElementById('date').value = '';
+      document.getElementById('amount').value = '';
+      document.getElementById('note').value = '';
+      alert('Transaction added.');
     }
 
-    function saveExpenses(expenses) {
-      localStorage.setItem("expenses", JSON.stringify(expenses));
-    }
-
-    function addExpense() {
-      const date = datePicker.value;
-      const amount = parseFloat(amountInput.value);
-      const note = noteInput.value;
-      if (!date || isNaN(amount)) return;
-      const expenses = loadExpenses();
-      expenses.unshift({ id: Date.now(), date, amount, note });
-      saveExpenses(expenses);
-      amountInput.value = "";
-      noteInput.value = "";
-      renderExpenses();
-    }
-
-    function deleteExpense(id) {
-      const expenses = loadExpenses().filter(e => e.id !== id);
-      saveExpenses(expenses);
-      renderExpenses();
-    }
-
-    function editExpense(id) {
-      const expenses = loadExpenses();
-      const index = expenses.findIndex(e => e.id === id);
-      const item = expenses[index];
-      const card = document.getElementById(`card-${id}`);
-      card.innerHTML = `
-        <div class="w-full">
-          <input id="edit-amount-${id}" type="number" class="w-full p-1 rounded mb-1 border border-pink-300" value="${item.amount}" />
-          <input id="edit-note-${id}" type="text" class="w-full p-1 rounded mb-1 border border-pink-300" value="${item.note}" />
-          <input id="edit-date-${id}" type="date" class="w-full p-1 rounded mb-2 border border-pink-300" value="${item.date}" />
-          <button onclick="saveEdit(${id})" class="bg-green-300 text-sm rounded-full px-3 py-1">✔ Save</button>
-        </div>
-      `;
-    }
-
-    function saveEdit(id) {
-      const amount = parseFloat(document.getElementById(`edit-amount-${id}`).value);
-      const note = document.getElementById(`edit-note-${id}`).value;
-      const date = document.getElementById(`edit-date-${id}`).value;
-      const expenses = loadExpenses();
-      const index = expenses.findIndex(e => e.id === id);
-      expenses[index] = { id, amount, note, date };
-      saveExpenses(expenses);
-      renderExpenses();
-    }
-
-    async function fetchProfitSheet() {
-      try {
-        const res = await fetch("https://opensheet.elk.sh/1UMul8nt25GR8MUM-_EdwAR0q6Ne2ovPv_R-m1-CHeXw/Profit%20Sheet");
-        return await res.json();
-      } catch {
-        return [];
-      }
-    }
-
-    async function renderExpenses() {
-      const expenses = loadExpenses();
-      const selectedFilter = filter.value;
-      const now = new Date();
-      const selectedDate = new Date(datePicker.value);
-      const profitDisplay = document.getElementById("monthlyProfit");
-      const warningDisplay = document.getElementById("monthlyWarning");
-
-      profitDisplay.textContent = "";
-      warningDisplay.textContent = "";
-      warningDisplay.classList.remove("glow", "shake");
-
-      const filtered = expenses.filter(entry => {
-        const entryDate = new Date(entry.date);
-        if (selectedFilter === "month") return entryDate.getMonth() === now.getMonth() && entryDate.getFullYear() === now.getFullYear();
-        if (selectedFilter === "week") {
-          const start = new Date(now);
-          start.setDate(now.getDate() - now.getDay());
-          const end = new Date(start);
-          end.setDate(start.getDate() + 6);
-          return entryDate >= start && entryDate <= end;
-        }
-        return entryDate.toDateString() === selectedDate.toDateString();
-      });
-
+    function fetchView() {
+      const selector = document.getElementById('view-month');
+      const month = selector.value;
+      const data = transactions.filter(t => t.date.startsWith(month));
       let total = 0;
-      expensesList.innerHTML = "";
-      filtered.forEach(entry => {
-        total += entry.amount;
-        const card = document.createElement("div");
-        card.className = "bg-pink-100 rounded-xl p-3 shadow-md flex justify-between items-start";
-        card.id = `card-${entry.id}`;
-        card.innerHTML = `
-          <div>
-            <div class="font-semibold">₹${entry.amount.toFixed(2)}</div>
-            <div class="text-sm">${entry.note || "No note"}</div>
-            <div class="text-xs text-purple-600">${new Date(entry.date).toLocaleDateString()}</div>
-          </div>
-          <div class="space-x-1">
-            <button onclick="editExpense(${entry.id})" class="text-xs px-2 py-1 bg-purple-300 rounded-full">Edit</button>
-            <button onclick="deleteExpense(${entry.id})" class="text-xs px-2 py-1 bg-red-300 rounded-full">Delete</button>
-          </div>`;
-        expensesList.appendChild(card);
+      const table = document.getElementById('view-table');
+      table.innerHTML = `<tr><th>Date</th><th>Amount</th><th>Note</th><th>Edit</th></tr>`;
+      data.forEach((t, i) => {
+        total += t.amount;
+        table.innerHTML += `<tr>
+          <td><input class='inline-input' value='${t.date}' onchange='update(${i}, "date", this.value)' /></td>
+          <td><input class='inline-input' value='${t.amount}' onchange='update(${i}, "amount", parseFloat(this.value))' /></td>
+          <td><input class='inline-input' value='${t.note}' onchange='update(${i}, "note", this.value)' /></td>
+          <td><button onclick='remove(${i})'>❌</button></td>
+        </tr>`;
       });
-
-      totalDisplay.textContent = total.toFixed(2);
-
-      if (selectedFilter === "month") {
-        const monthName = now.toLocaleString('default', { month: 'long' }) + " " + now.getFullYear();
-        const profitData = await fetchProfitSheet();
-        const entry = profitData.find(row => row["Month"]?.trim() === monthName);
-        if (entry) {
-          const profit = parseFloat(entry["Profit"]);
-          profitDisplay.textContent = `Monthly Profit: ₹${profit.toFixed(2)}`;
-          if (total > profit) {
-           popup.innerHTML = `
-  💥 <strong>Overspent Alert!</strong><br/>
-  Budget is crying. Time to pause the swipe! 💳💔
-`;
-popup.style.display = "block";
-sound.currentTime = 0;
-sound.play();
-setTimeout(() => {
-  popup.style.display = "none";
-  sound.pause();
-  warningDisplay.innerHTML = `
-  <div class="shimmer text-600 text-sm font-bold">
-    😬 You’re over budget this month.<br/>
-    Sip chai, skip buys and serve financial discipline like a CEO 💅☕💸.
-  </div>`;
-  warningDisplay.classList.add("glow", "shake");
-}, 5000);
-
-          }
-        }
-      }
+      document.getElementById('total-expense').innerText = `Total: ₹${total}`;
+      populateMonthDropdown('view-month');
     }
 
-    async function renderProfitData() {
-      const container = document.getElementById("profitList");
-      container.innerHTML = "Loading...";
-      const data = await fetchProfitSheet();
-      if (!data.length) {
-        container.innerHTML = "<p class='text-red-500'>No data found.</p>";
-        return;
-      }
-      container.innerHTML = "";
-      data.forEach(row => {
-        if (row["Month"] && row["Profit"]) {
-          const div = document.createElement("div");
-          div.className = "bg-green-100 p-2 rounded-lg shadow";
-          div.textContent = `${row["Month"]}: ₹${parseFloat(row["Profit"]).toFixed(2)}`;
-          container.appendChild(div);
-        }
-      });
+    function update(index, field, value) {
+      transactions[index][field] = value;
     }
 
-    switchTab('add');
+    function remove(index) {
+      transactions.splice(index, 1);
+      fetchView();
+    }
+
+    async function fetchMonthOptions() {
+      const res = await fetch(sheetURL + 'Profit%20Sheet');
+      const data = await res.json();
+      const options = [...new Set(data.map(r => r.Month))];
+      const dropdowns = ['profit-month', 'view-month'];
+      dropdowns.forEach(id => {
+        const sel = document.getElementById(id);
+        sel.innerHTML = '';
+        options.forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
+        sel.value = options[options.length - 1];
+      });
+      fetchProfit();
+    }
+
+    async function fetchProfit() {
+      const month = document.getElementById('profit-month').value;
+      const res = await fetch(sheetURL + 'Profit%20Sheet');
+      const data = await res.json();
+      const row = data.find(r => r.Month === month);
+      document.getElementById('profit-display').innerText = `Profit: ₹${row?.Profit || 0}`;
+    }
+
+    async function fetchInvestment() {
+      const res = await fetch(sheetURL + 'Vendor%20Sales%20Record');
+      const data = await res.json();
+      const summary = document.getElementById('investment-summary');
+      summary.innerHTML = '';
+      const rows = ['Available Wallet', 'Reseller Amount Due', 'Client Due', 'Total Amount Invested'];
+      rows.forEach((label, i) => {
+        const key = Object.keys(data[i])[0];
+        summary.innerHTML += `<li>${label}: ₹${data[i][key + 1]}</li>`;
+      });
+      const vendors = data.slice(5).filter(r => {
+        const val = parseFloat(r['Balance']);
+        return !isNaN(val) && val !== 0;
+      });
+      const table = document.getElementById('vendor-table');
+      table.innerHTML = '<tr><th>Vendor Name</th><th>Balance</th></tr>';
+      vendors.forEach(v => table.innerHTML += `<tr><td>${v['Vendor name']}</td><td>₹${v['Balance']}</td></tr>`);
+    }
+
+    function populateMonthDropdown(id) {
+      const dates = [...new Set(transactions.map(t => t.date.substring(0, 7)))];
+      const sel = document.getElementById(id);
+      sel.innerHTML = '';
+      dates.forEach(d => sel.innerHTML += `<option value='${d}'>${d}</option>`);
+      sel.value = dates[dates.length - 1];
+    }
   </script>
 </body>
 </html>
