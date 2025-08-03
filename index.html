@@ -3,248 +3,58 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#fcd6e0" />
-  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap">
   <title>Daily Expenses Tracker 🎀</title>
   <style>
     body {
-      font-family: 'Quicksand', sans-serif;
       margin: 0;
+      font-family: 'Quicksand', sans-serif;
       background: url('https://i.pinimg.com/736x/58/09/12/5809128d95aee17fdad43073ef5495be.jpg') no-repeat center center fixed;
       background-size: cover;
     }
-    .container {
-      background-color: rgba(255, 255, 255, 0.85);
-      max-width: 600px;
-      margin: 20px auto;
+    .app {
+      max-width: 800px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.8);
       border-radius: 20px;
       padding: 20px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+      margin-top: 40px;
     }
-    h1, h2, h3 {
+    h1 {
       text-align: center;
-      color: #c06c84;
+      color: #e91e63;
     }
-    .tabs {
+    nav {
       display: flex;
       justify-content: space-around;
       margin-bottom: 20px;
     }
-    .tab-button {
-      flex: 1;
-      padding: 10px;
+    nav button {
+      background-color: #f8bbd0;
       border: none;
-      background-color: #f9cfdc;
-      color: #fff;
-      font-weight: bold;
+      padding: 10px 20px;
       border-radius: 20px;
-      margin: 0 5px;
+      font-weight: bold;
       cursor: pointer;
     }
-    .tab-button.active {
-      background-color: #f08ca1;
+    .section {
+      display: none;
     }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    input, textarea, select {
+    .active {
+      display: block;
+    }
+    .field {
+      margin: 10px 0;
+    }
+    .field label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    input, select, textarea {
       width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border: 1px solid #ddd;
+      padding: 8px;
       border-radius: 10px;
+      border: 1px solid #ccc;
     }
-    .entry {
-      background-color: #ffe6ec;
-      padding: 10px;
-      border-radius: 10px;
-      margin: 10px 0;
-    }
-    .entry span {
-      display: inline-block;
-      width: 100px;
-    }
-    .edit-btn, .delete-btn, .save-btn {
-      margin-left: 10px;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-  <div class="main-container">
-    <div class="tab-container">
-      <button class="tab-btn active" onclick="openTab(event, 'addTab')">➕ Add</button>
-      <button class="tab-btn" onclick="openTab(event, 'viewTab')">📅 View</button>
-      <button class="tab-btn" onclick="openTab(event, 'profitTab')">📈 Profit</button>
-      <button class="tab-btn" onclick="openTab(event, 'investmentTab')">💰 Investment</button>
-    </div>
-
-    <div id="addTab" class="tab-content" style="display: block">
-      <label for="dateInput">Date:</label>
-      <input type="date" id="dateInput" />
-      <input type="number" id="amountInput" placeholder="Expense Amount" />
-      <input type="text" id="noteInput" placeholder="Comments/Notes" />
-      <button onclick="addTransaction()">Save</button>
-      <div id="entryStatus"></div>
-    </div>
-
-    <div id="viewTab" class="tab-content">
-      <div class="filter-row">
-        <select id="monthSelect"></select>
-        <select id="yearSelect"></select>
-      </div>
-      <div id="viewTotal"></div>
-      <table id="transactionsTable">
-        <thead>
-          <tr><th>Date</th><th>Amount</th><th>Note</th><th>Edit</th><th>Delete</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-
-    <div id="profitTab" class="tab-content">
-      <div class="filter-row">
-        <select id="profitMonthSelect"></select>
-        <select id="profitYearSelect"></select>
-      </div>
-      <div id="profitValue"></div>
-    </div>
-
-    <div id="investmentTab" class="tab-content">
-      <div class="top-metrics" id="investmentTopMetrics"></div>
-      <table id="investmentTable">
-        <thead>
-          <tr><th>Vendor Name</th><th>Balance</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-
-  <script>
-    let transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
-
-    function openTab(evt, tabName) {
-      document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      document.getElementById(tabName).style.display = 'block';
-      evt.currentTarget.classList.add('active');
-      if (tabName === 'viewTab') renderTransactions();
-      if (tabName === 'profitTab') loadProfit();
-      if (tabName === 'investmentTab') loadInvestment();
-    }
-
-    function addTransaction() {
-      const date = document.getElementById('dateInput').value || new Date().toISOString().split('T')[0];
-      const amount = parseFloat(document.getElementById('amountInput').value);
-      const note = document.getElementById('noteInput').value;
-      if (!amount) return;
-      transactions.push({ date, amount, note });
-      localStorage.setItem('transactions', JSON.stringify(transactions));
-      document.getElementById('entryStatus').innerText = 'Saved ✅';
-      document.getElementById('amountInput').value = '';
-      document.getElementById('noteInput').value = '';
-      renderTransactions();
-    }
-
-    function renderTransactions() {
-      const month = document.getElementById('monthSelect').value;
-      const year = document.getElementById('yearSelect').value;
-      const tbody = document.querySelector('#transactionsTable tbody');
-      tbody.innerHTML = '';
-      const filtered = transactions.filter(t => {
-        const d = new Date(t.date);
-        return d.getMonth() + 1 == month && d.getFullYear() == year;
-      });
-      let total = 0;
-      filtered.forEach((t, i) => {
-        total += t.amount;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td><input type="date" value="${t.date}" onchange="editTransaction(${i}, 'date', this.value)"/></td>
-          <td><input type="number" value="${t.amount}" onchange="editTransaction(${i}, 'amount', this.value)"/></td>
-          <td><input type="text" value="${t.note}" onchange="editTransaction(${i}, 'note', this.value)"/></td>
-          <td><button onclick="editTransaction(${i}, 'save')">✔️</button></td>
-          <td><button onclick="deleteTransaction(${i})">🗑️</button></td>
-        `;
-        tbody.appendChild(tr);
-      });
-      document.getElementById('viewTotal').innerText = `Total: ₹${total}`;
-    }
-
-    function editTransaction(index, key, value) {
-      if (key === 'save') {
-        localStorage.setItem('transactions', JSON.stringify(transactions));
-      } else {
-        transactions[index][key] = key === 'amount' ? parseFloat(value) : value;
-      }
-    }
-
-    function deleteTransaction(index) {
-      transactions.splice(index, 1);
-      localStorage.setItem('transactions', JSON.stringify(transactions));
-      renderTransactions();
-    }
-
-    function populateMonthYearDropdowns(transactionsList, monthEl, yearEl) {
-      const uniqueMonths = new Set();
-      const uniqueYears = new Set();
-      transactionsList.forEach(t => {
-        const d = new Date(t.date);
-        uniqueMonths.add(d.getMonth() + 1);
-        uniqueYears.add(d.getFullYear());
-      });
-      monthEl.innerHTML = [...uniqueMonths].sort().map(m => `<option value="${m}">${m}</option>`).join('');
-      yearEl.innerHTML = [...uniqueYears].sort().map(y => `<option value="${y}">${y}</option>`).join('');
-      monthEl.value = Math.max(...uniqueMonths);
-      yearEl.value = Math.max(...uniqueYears);
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      const now = new Date();
-      document.getElementById('dateInput').value = now.toISOString().split('T')[0];
-      populateMonthYearDropdowns(transactions, document.getElementById('monthSelect'), document.getElementById('yearSelect'));
-    });
-
-    async function loadProfit() {
-      const res = await fetch('https://opensheet.elk.sh/1UMul8nt25GR8MUM-_EdwAR0q6Ne2ovPv_R-m1-CHeXw/Profit%20Sheet');
-      const data = await res.json();
-      const uniqueMonths = [...new Set(data.map(r => r['Month']))];
-      const profitMonthEl = document.getElementById('profitMonthSelect');
-      const profitYearEl = document.getElementById('profitYearSelect');
-      profitMonthEl.innerHTML = uniqueMonths.map(m => {
-        const [month, year] = m.split(' ');
-        return `<option value="${month}">${month}</option>`;
-      }).join('');
-      profitYearEl.innerHTML = uniqueMonths.map(m => {
-        const [_, year] = m.split(' ');
-        return `<option value="${year}">${year}</option>`;
-      }).join('');
-      const latest = uniqueMonths[uniqueMonths.length - 1];
-      const [latestMonth, latestYear] = latest.split(' ');
-      profitMonthEl.value = latestMonth;
-      profitYearEl.value = latestYear;
-      const found = data.find(r => r['Month'] === `${latestMonth} ${latestYear}`);
-      document.getElementById('profitValue').innerText = found ? `Profit: ₹${found['Profit']}` : 'No data';
-    }
-
-    async function loadInvestment() {
-      const res = await fetch('https://opensheet.elk.sh/1UMul8nt25GR8MUM-_EdwAR0q6Ne2ovPv_R-m1-CHeXw/Vendor%20Sales%20Record');
-      const data = await res.json();
-      const topMetrics = [2, 3, 4, 5].map(i => `<div>${data[i - 2]['I']} - ₹${data[i - 2]['J']}</div>`).join('');
-      document.getElementById('investmentTopMetrics').innerHTML = topMetrics;
-      const tbody = document.querySelector('#investmentTable tbody');
-      tbody.innerHTML = '';
-      data.forEach(row => {
-        const vendor = row['Vendor name'] || row['B'];
-        const balance = row['Balance'] || row['F'];
-        const numericBalance = parseFloat(balance);
-        if (vendor && !isNaN(numericBalance) && numericBalance !== 0) {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${vendor}</td><td>₹${numericBalance}</td>`;
-          tbody.appendChild(tr);
-        }
-      });
-    }
-  </script>
-</body>
-</html>
+    table {
+      width: 100%;
