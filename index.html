@@ -132,7 +132,7 @@
 
     <h1>Daily Expenses Tracker 🎀</h1>
 
-        <!-- Navigation -->
+    <!-- Navigation -->
     <nav>
         <button onclick="switchTab('add')">➕ Add</button>
         <button onclick="switchTab('view')">📊 View</button>
@@ -203,11 +203,14 @@
     const sheetURL = 'https://opensheet.elk.sh/1UMul8nt25GR8MUM-_EdwAR0q6Ne2ovPv_R-m1-CHeXw/';
     const summarySheetName = 'Vendor%20Sales%20Record';
 
+    // Fixed cell mapping based on your sheet structure:
+    // J2 = Available Wallet, J3 = Reseller Amount Due, J4 = Client Due, J5 = Total Amount Invested
+    // OpenSheet converts this to JSON where column J becomes index 9 in the array representation
     const SUMMARY_MAP = [
-        { label: 'Available Wallet', rowIndex: 0, column: 'Available Wallet' },
-        { label: 'Reseller Amount Due', rowIndex: 1, column: 'Reseller Amount Due' },
-        { label: 'Client Due', rowIndex: 2, column: 'Client Due' },
-        { label: 'Total Amount Invested', rowIndex: 3, column: 'Total Amount Invested' }
+        { label: 'Available Wallet', rowIndex: 1, columnIndex: 9 },
+        { label: 'Reseller Amount Due', rowIndex: 2, columnIndex: 9 },
+        { label: 'Client Due', rowIndex: 3, columnIndex: 9 },
+        { label: 'Total Amount Invested', rowIndex: 4, columnIndex: 9 }
     ];
 
     let transactions = [];
@@ -408,7 +411,7 @@
     // =====================================================
     async function fetchInvestment() {
         try {
-            // Fetch Summary Data
+            // Fetch Summary Data from specific cells (J2, J3, J4, J5)
             const resSummary = await fetch(sheetURL + summarySheetName);
             const summaryData = await resSummary.json();
             const summary = document.getElementById('investment-summary');
@@ -416,8 +419,9 @@
 
             SUMMARY_MAP.forEach(item => {
                 const row = summaryData[item.rowIndex] || {};
-                const raw = row[item.column];
-                const value = cleanNumber(raw);
+                // Access by column index (J = index 9 in OpenSheet array representation)
+                const columnKeys = Object.keys(row);
+                const value = cleanNumber(row[columnKeys[item.columnIndex]]);
                 summary.innerHTML += '<li>' + item.label + ': ₹' + ((isNaN(value) ? 0 : value).toFixed(2)) + '</li>';
             });
 
@@ -503,5 +507,4 @@
         populateMonthDropdown('view-month');
     })();
 </script>
-
 </body> </html>
