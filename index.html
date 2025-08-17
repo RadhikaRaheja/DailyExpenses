@@ -1,269 +1,487 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap">
-  <title>Daily Expenses Tracker 🎀</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Quicksand', sans-serif;
-      background: url('https://i.pinimg.com/736x/58/09/12/5809128d95aee17fdad43073ef5495be.jpg') no-repeat center center fixed;
-      background-size: cover;
-    }
-    .app {
-      max-width: 800px;
-      margin: 0 auto;
-      background: rgba(255, 255, 255, 0.8);
-      border-radius: 20px;
-      padding: 20px;
-      margin-top: 40px;
-    }
-    h1 {
-      text-align: center;
-      color: #e91e63;
-    }
-    nav {
-      display: flex;
-      justify-content: space-around;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    nav button {
-      background-color: #f8bbd0;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 20px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-    nav button:hover {
-      background-color: #f48fb1;
-    }
-    .section {
-      display: none;
-    }
-    .active {
-      display: block;
-    }
-    .field {
-      margin: 10px 0;
-    }
-    .field label {
-      display: block;
-      margin-bottom: 5px;
-    }
-    input, select, textarea {
-      width: 100%;
-      padding: 8px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    th, td {
-      padding: 10px;
-      border: 1px solid #ccc;
-      text-align: center;
-    }
-    .inline-input {
-      border: none;
-      background: transparent;
-      width: 90%;
-    }
-  </style>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" />
+
+    <title>Daily Expenses Tracker 🎀</title>
+
+    <style>
+        :root {
+            --brand: #e91e63;
+            --btn: #f8bbd0;
+            --btn-hover: #f48fb1;
+            --card-bg: rgba(255, 255, 255, 0.88);
+            --border: #ccc;
+            --text: #222;
+            --table-header: #fafafa;
+            --neg-text: #8b0000;
+            --neg-bg: #ffe5e5;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Quicksand', sans-serif;
+            color: var(--text);
+            background: url('https://i.pinimg.com/736x/58/09/12/5809128d95aee17fdad43073ef5495be.jpg') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        .app {
+            max-width: 900px;
+            margin: 40px auto 60px;
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--brand);
+            margin: 6px 0 16px;
+        }
+
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        nav button {
+            background-color: var(--btn);
+            border: none;
+            padding: 10px 18px;
+            border-radius: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        nav button:hover {
+            background-color: var(--btn-hover);
+            transform: translateY(-1px);
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .field {
+            margin: 10px 0;
+        }
+
+        .field label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            font-family: inherit;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid var(--border);
+            text-align: center;
+            background: #fff;
+        }
+
+        th {
+            background: var(--table-header);
+        }
+
+        .inline-input {
+            border: none;
+            background: transparent;
+            width: 90%;
+        }
+
+        .muted {
+            color: #666;
+        }
+
+        .neg {
+            color: var(--neg-text);
+            font-weight: 700;
+        }
+    </style>
+
 </head>
+
 <body>
-  <div class="app">
-    <h1>Daily Expenses Tracker 🎀</h1>
 
-    <!-- Navigation -->
-    <nav>
-      <button onclick="switchTab('add')">➕ Add</button>
-      <button onclick="switchTab('view')">📊 View</button>
-      <button onclick="switchTab('profit')">💰 Profit</button>
-      <button onclick="switchTab('investment')">📈 Investment</button>
-    </nav>
+    <div class="app">
 
-    <!-- Add Page -->
-    <div id="add" class="section active">
-      <div class="field">
-        <label for="date">Date:</label>
-        <input type="date" id="date" />
-      </div>
-      <div class="field">
-        <label for="amount">Expense Amount:</label>
-        <input type="number" id="amount" />
-      </div>
-      <div class="field">
-        <label for="note">Comments:</label>
-        <textarea id="note"></textarea>
-      </div>
-      <button onclick="addTransaction()">Save</button>
+        <h1>Daily Expenses Tracker 🎀</h1>
+
+        <nav>
+            <button onclick="switchTab('add')">➕ Add</button>
+            <button onclick="switchTab('view')">📊 View</button>
+            <button onclick="switchTab('profit')">💰 Profit</button>
+            <button onclick="switchTab('investment')">📈 Investment</button>
+        </nav>
+
+        <div id="add" class="section active">
+            <div class="field">
+                <label for="date">Date</label>
+                <input type="date" id="date" />
+            </div>
+
+            <div class="field">
+                <label for="amount">Expense Amount</label>
+                <input type="number" id="amount" />
+            </div>
+
+            <div class="field">
+                <label for="note">Comments</label>
+                <textarea id="note"></textarea>
+            </div>
+
+            <button onclick="addTransaction()">Save</button>
+            <p class="muted">Entries are saved locally and persist after refresh.</p>
+        </div>
+
+        <div id="view" class="section">
+            <div class="field">
+                <label for="view-month">Month & Year</label>
+                <select id="view-month" onchange="fetchView()"></select>
+            </div>
+
+            <h3 id="total-expense">Total: ₹0</h3>
+            <table id="view-table"></table>
+        </div>
+
+        <div id="profit" class="section">
+            <div class="field">
+                <label for="profit-month">Month & Year</label>
+                <select id="profit-month" onchange="fetchProfit()"></select>
+            </div>
+
+            <h3 id="profit-display">Profit: ₹0</h3>
+        </div>
+
+        <div id="investment" class="section">
+            <h3>Summary</h3>
+            <ul id="investment-summary"></ul>
+
+            <h3>Vendor Balances</h3>
+            <table id="vendor-table"></table>
+
+            <p class="muted">
+                Color scale: negatives dark red; highest positive red, blending through yellow to light green.
+            </p>
+        </div>
+
     </div>
 
-    <!-- View Page -->
-    <div id="view" class="section">
-      <div class="field">
-        <label for="view-month">Month & Year:</label>
-        <select id="view-month"></select>
-      </div>
-      <h3 id="total-expense">Total: ₹0</h3>
-      <table id="view-table"></table>
-    </div>
+    <script>
+        // Configuration & State
+        const sheetURL = 'https://opensheet.elk.sh/1UMul8nt25GR8MUM-_EdwAR0q6Ne2ovPv_R-m1-CHeXw/';
+        let transactions = [];
 
-    <!-- Profit Page -->
-    <div id="profit" class="section">
-      <div class="field">
-        <label for="profit-month">Month & Year:</label>
-        <select id="profit-month" onchange="fetchProfit()"></select>
-      </div>
-      <h3 id="profit-display">Profit: ₹0</h3>
-    </div>
+        // Persistence (localStorage)
+        function loadTransactions() {
+            try {
+                transactions = JSON.parse(localStorage.getItem('transactions_v1') || '[]');
+            } catch {
+                transactions = [];
+            }
+        }
 
-    <!-- Investment Page -->
-    <div id="investment" class="section">
-      <h3>Summary</h3>
-      <ul id="investment-summary"></ul>
-      <h3>Vendor Balances</h3>
-      <table id="vendor-table"></table>
-    </div>
-  </div>
+        function saveTransactions() {
+            try {
+                localStorage.setItem('transactions_v1', JSON.stringify(transactions));
+            } catch {
+                // Silently ignore quota errors
+            }
+        }
 
-  <!-- JS Logic -->
-<script>
-  let transactions = [];
-  const sheetURL = 'https://opensheet.elk.sh/1UMul8nt25GR8MUM-_EdwAR0q6Ne2ovPv_R-m1-CHeXw/';
+        // Utilities
+        function cleanNumber(v) {
+            if (v == null) return NaN;
+            const s = String(v).replace(/[₹,\s]/g, '');
+            const n = parseFloat(s);
+            return isNaN(n) ? NaN : n;
+        }
 
-  /* ---------------- Tab Switching ---------------- */
-  function switchTab(tab) {
-    document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
-    document.getElementById(tab).classList.add('active');
-    if (tab === 'view') fetchView();
-    if (tab === 'profit') fetchMonthOptions();
-    if (tab === 'investment') fetchInvestment();
-  }
+        function normalizeKey(k) {
+            return String(k || '').trim().toLowerCase();
+        }
 
-  /* ---------------- Add Transaction ---------------- */
-  function addTransaction() {
-    const date = document.getElementById('date').value;
-    const amount = parseFloat(document.getElementById('amount').value);
-    const note = document.getElementById('note').value;
-    if (!date || isNaN(amount)) return alert("Enter valid date and amount");
-    transactions.push({ date, amount, note });
-    document.getElementById('date').value = '';
-    document.getElementById('amount').value = '';
-    document.getElementById('note').value = '';
-    alert('Transaction added.');
-  }
+        function getValueByLabel(row, label) {
+            const target = normalizeKey(label);
+            for (const key in row) {
+                if (normalizeKey(key) === target) return row[key];
+            }
+            return undefined;
+        }
 
-  /* ---------------- View Transactions ---------------- */
-  function fetchView() {
-    const selector = document.getElementById('view-month');
-    const month = selector.value;
-    const data = transactions.filter(t => t.date.startsWith(month));
-    let total = 0;
-    const table = document.getElementById('view-table');
-    table.innerHTML = `<tr><th>Date</th><th>Amount</th><th>Note</th><th>Edit</th></tr>`;
-    data.forEach((t, i) => {
-      total += t.amount;
-      table.innerHTML += `
-        <tr>
-          <td><input class='inline-input' value='${t.date}' onchange='update(${i}, "date", this.value)' /></td>
-          <td><input class='inline-input' type="number" value='${t.amount}' onchange='update(${i}, "amount", parseFloat(this.value))' /></td>
-          <td><input class='inline-input' value='${t.note}' onchange='update(${i}, "note", this.value)' /></td>
-          <td><button onclick='remove(${i})'>❌</button></td>
-        </tr>`;
-    });
-    document.getElementById('total-expense').innerText = `Total: ₹${total}`;
-    populateMonthDropdown('view-month');
-  }
+        function colorForPositive(t) {
+            const clamp = (x) => Math.max(0, Math.min(1, x));
+            t = clamp(t);
 
-  function update(index, field, value) {
-    transactions[index][field] = value;
-  }
+            let r, g, b;
+            if (t <= 0.5) {
+                const p = t / 0.5;
+                r = Math.round(76 + (255 - 76) * p);
+                g = Math.round(175 + (235 - 175) * p);
+                b = Math.round(80 + (59 - 80) * p);
+            } else {
+                const p = (t - 0.5) / 0.5;
+                r = Math.round(255 + (244 - 255) * p);
+                g = Math.round(235 + (67 - 235) * p);
+                b = Math.round(59 + (54 - 59) * p);
+            }
+            return `rgb(${r}, ${g}, ${b})`;
+        }
 
-  function remove(index) {
-    transactions.splice(index, 1);
-    fetchView();
-  }
+        // Tab Management
+        function switchTab(tab) {
+            document.querySelectorAll('.section').forEach((sec) => sec.classList.remove('active'));
+            document.getElementById(tab).classList.add('active');
 
-  /* ---------------- Profit Section ---------------- */
-  async function fetchMonthOptions() {
-    const res = await fetch(sheetURL + 'Profit%20Sheet');
-    const data = await res.json();
-    const options = [...new Set(data.map(r => r.Month))];
-    const dropdowns = ['profit-month', 'view-month'];
-    dropdowns.forEach(id => {
-      const sel = document.getElementById(id);
-      sel.innerHTML = '';
-      options.forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
-      sel.value = options[options.length - 1];
-    });
-    fetchProfit();
-  }
+            if (tab === 'view') fetchView();
+            if (tab === 'profit') fetchMonthOptions();
+            if (tab === 'investment') fetchInvestment();
+        }
 
-  async function fetchProfit() {
-    const month = document.getElementById('profit-month').value;
-    const res = await fetch(sheetURL + 'Profit%20Sheet');
-    const data = await res.json();
-    const row = data.find(r => r.Month === month);
-    document.getElementById('profit-display').innerText = `Profit: ₹${row?.Profit || 0}`;
-  }
+        // Add Tab Logic
+        function addTransaction() {
+            const date = document.getElementById('date').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const note = document.getElementById('note').value;
 
-  /* ---------------- Investment Section ---------------- */
-  async function fetchInvestment() {
-    const res = await fetch(sheetURL + 'Vendor%20Sales%20Record');
-    const data = await res.json();
+            if (!date || isNaN(amount)) {
+                alert('Enter valid date and amount');
+                return;
+            }
 
-    // --- Summary Section ---
-    const summary = document.getElementById('investment-summary');
-    summary.innerHTML = '';
+            transactions.push({
+                date,
+                amount,
+                note
+            });
+            saveTransactions();
 
-    const summaryFields = [
-      "Available Wallet",
-      "Reseller Amount Due",
-      "Client Due",
-      "Total Amount Invested"
-    ];
+            document.getElementById('date').value = '';
+            document.getElementById('amount').value = '';
+            document.getElementById('note').value = '';
 
-    summaryFields.forEach(field => {
-      const row = data.find(r => r[field] !== undefined && r[field] !== "");
-      const value = parseFloat(row?.[field]) || 0;
-      summary.innerHTML += `<li>${field}: ₹${value.toFixed(2)}</li>`;
-    });
+            populateMonthDropdown('view-month');
+            alert('Transaction added.');
+        }
 
-    // --- Vendor Balances Section ---
-    const vendorTable = document.getElementById('vendor-table');
-    vendorTable.innerHTML = '<tr><th>Vendor Name</th><th>Balance</th></tr>';
+        // View Tab Logic
+        function fetchView() {
+            if (!document.getElementById('view-month').options.length) {
+                populateMonthDropdown('view-month');
+            }
 
-    data.forEach(row => {
-      const name = row["Vendor Name"];
-      const balance = parseFloat(row["Balance"]);
-      if (name && !isNaN(balance) && balance !== 0) {
-        vendorTable.innerHTML += `
-          <tr>
-            <td>${name}</td>
-            <td>₹${balance.toFixed(2)}</td>
-          </tr>`;
-      }
-    });
-  }
+            const selector = document.getElementById('view-month');
+            const month = selector.value || '';
+            const data = month ?
+                transactions.filter((t) => t.date && t.date.startsWith(month)) :
+                transactions.slice();
 
-  /* ---------------- Helper ---------------- */
-  function populateMonthDropdown(id) {
-    const dates = [...new Set(transactions.map(t => t.date.substring(0, 7)))];
-    const sel = document.getElementById(id);
-    sel.innerHTML = '';
-    dates.forEach(d => sel.innerHTML += `<option value='${d}'>${d}</option>`);
-    if (dates.length > 0) sel.value = dates[dates.length - 1];
-  }
-</script>
+            let total = 0;
+            const table = document.getElementById('view-table');
+            table.innerHTML = `
+                <tr>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Note</th>
+                    <th>Edit</th>
+                </tr>
+            `;
+
+            data.forEach((t, i) => {
+                total += Number(t.amount) || 0;
+                table.innerHTML += `
+                    <tr>
+                        <td>
+                            <input class="inline-input" type="date" value="${t.date || ''}" onchange="updateTx(${i}, 'date', this.value)" />
+                        </td>
+                        <td>
+                            <input class="inline-input" type="number" value="${t.amount ?? 0}" onchange="updateTx(${i}, 'amount', parseFloat(this.value))" />
+                        </td>
+                        <td>
+                            <input class="inline-input" value="${t.note ? String(t.note).replace(/\"/g, '&quot;') : ''}" onchange="updateTx(${i}, 'note', this.value)" />
+                        </td>
+                        <td>
+                            <button onclick="removeTx(${i})">❌</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('total-expense').innerText = `Total: ₹${total.toFixed(2)}`;
+        }
+
+        function updateTx(index, field, value) {
+            transactions[index][field] = value;
+            saveTransactions();
+            fetchView();
+        }
+
+        function removeTx(index) {
+            transactions.splice(index, 1);
+            saveTransactions();
+            fetchView();
+        }
+
+        function populateMonthDropdown(id) {
+            const months = [...new Set(transactions.map((t) => (t.date || '').substring(0, 7)).filter(Boolean))].sort();
+            const sel = document.getElementById(id);
+            sel.innerHTML = '';
+            months.forEach((m) => (sel.innerHTML += `<option value="${m}">${m}</option>`));
+            if (months.length) sel.value = months[months.length - 1];
+        }
+
+        // Profit Tab Logic
+        async function fetchMonthOptions() {
+            try {
+                const res = await fetch(sheetURL + 'Profit%20Sheet');
+                const data = await res.json();
+                const months = [...new Set(data.map((r) => r.Month).filter(Boolean))];
+
+                ['profit-month', 'view-month'].forEach((id) => {
+                    const sel = document.getElementById(id);
+                    sel.innerHTML = '';
+                    months.forEach((m) => (sel.innerHTML += `<option value="${m}">${m}</option>`));
+                    if (months.length) sel.value = months[months.length - 1];
+                });
+
+                fetchProfit();
+            } catch (e) {
+                console.warn('Profit month options failed', e);
+            }
+        }
+
+        async function fetchProfit() {
+            try {
+                const month = document.getElementById('profit-month').value;
+                const res = await fetch(sheetURL + 'Profit%20Sheet');
+                const data = await res.json();
+                const row = data.find((r) => r.Month === month);
+                const val = cleanNumber(row ? .Profit);
+                document.getElementById('profit-display').innerText = `Profit: ₹${(isNaN(val) ? 0 : val).toFixed(2)}`;
+            } catch (e) {
+                console.warn('Fetch profit failed', e);
+                document.getElementById('profit-display').innerText = 'Profit: ₹0.00';
+            }
+        }
+
+        // Investment Tab Logic
+        async function fetchInvestment() {
+            try {
+                const res = await fetch(sheetURL + 'Vendor%20Sales%20Record');
+                const data = await res.json();
+
+                const summaryContainer = document.getElementById('investment-summary');
+                summaryContainer.innerHTML = '';
+                const summaryLabels = ['Available Wallet', 'Reseller Amount Due', 'Client Due', 'Total Amount Invested'];
+
+                summaryLabels.forEach((label) => {
+                    const row = data.find((r) => Object.keys(r).some((k) => normalizeKey(k) === normalizeKey(label)));
+                    const raw = row ? getValueByLabel(row, label) : undefined;
+                    const value = cleanNumber(raw);
+                    summaryContainer.innerHTML += `<li>${label}: ₹${(isNaN(value) ? 0 : value).toFixed(2)}</li>`;
+                });
+
+                const vendorTable = document.getElementById('vendor-table');
+                vendorTable.innerHTML = `
+                    <tr>
+                        <th>Vendor Name</th>
+                        <th>Balance</th>
+                    </tr>
+                `;
+
+                const sampleVendorRow = data.find((r) => {
+                    const keys = Object.keys(r).map(normalizeKey);
+                    return keys.includes(normalizeKey('Vendor Name')) && keys.includes(normalizeKey('Balance'));
+                });
+
+                const vendorKey = sampleVendorRow ? Object.keys(sampleVendorRow).find((k) => normalizeKey(k) === normalizeKey('Vendor Name')) : 'Vendor Name';
+                const balanceKey = sampleVendorRow ? Object.keys(sampleVendorRow).find((k) => normalizeKey(k) === normalizeKey('Balance')) : 'Balance';
+
+                const rows = [];
+                let maxPos = 0;
+                data.forEach((r) => {
+                    const name = r[vendorKey];
+                    const bal = cleanNumber(r[balanceKey]);
+                    if (name && !isNaN(bal)) {
+                        rows.push({
+                            name,
+                            bal
+                        });
+                        if (bal > 0) maxPos = Math.max(maxPos, bal);
+                    }
+                });
+
+                rows.forEach(({
+                    name,
+                    bal
+                }) => {
+                    let style = '';
+                    let cls = '';
+
+                    if (bal < 0) {
+                        style = `background: var(--neg-bg); color: var(--neg-text); font-weight: 700;`;
+                        cls = 'neg';
+                    } else if (bal > 0 && maxPos > 0) {
+                        const t = bal / maxPos;
+                        const bg = colorForPositive(t);
+                        style = `background: ${bg}; color: #222;`;
+                    } else {
+                        style = 'background: #fff; color: #222;';
+                    }
+
+                    vendorTable.innerHTML += `
+                        <tr>
+                            <td>${name}</td>
+                            <td style="${style}" class="${cls}">₹${bal.toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+
+            } catch (e) {
+                console.warn('Fetch investment failed', e);
+                document.getElementById('investment-summary').innerHTML = '<li>Unable to load investment summary.</li>';
+                document.getElementById('vendor-table').innerHTML = '<tr><td colspan="2">Unable to load vendor balances.</td></tr>';
+            }
+        }
+
+        // Initialization
+        (function init() {
+            loadTransactions();
+            populateMonthDropdown('view-month');
+        })();
+    </script>
+
 </body>
+
 </html>
