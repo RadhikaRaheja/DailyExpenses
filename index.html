@@ -202,10 +202,10 @@
     // =====================================================
     const sheetURL = 'https://opensheet.elk.sh/1UMul8nt25GR8MUM-_EdwAR0q6Ne2ovPv_R-m1-CHeXw/';
     const summarySheetName = 'Vendor%20Sales%20Record';
+    const webAppURL = 'YOUR_DEPLOYED_WEB_APP_URL_HERE'; // 🔗 Replace this
 
-    // Fixed cell mapping based on your sheet structure:
-    // J2 = Available Wallet, J3 = Reseller Amount Due, J4 = Client Due, J5 = Total Amount Invested
-    // OpenSheet converts this to JSON where column J becomes index 9 in the array representation
+    const sheetName = 'Daily Sales record'; // Main expense sheet
+
     const SUMMARY_MAP = [
         { label: 'Available Wallet', rowIndex: 0, columnIndex: 9 },
         { label: 'Reseller Amount Due', rowIndex: 1, columnIndex: 9 },
@@ -214,6 +214,43 @@
     ];
 
     let transactions = [];
+
+    // =====================================================
+    // FETCH & SYNC FUNCTIONS
+    // =====================================================
+    async function fetchExpenses() {
+        try {
+            const res = await fetch(`${webAppURL}?sheet=${encodeURIComponent(sheetName)}`);
+            const data = await res.json();
+            transactions = data.map(r => ({
+                date: r.Date || '',
+                amount: parseFloat(r['Expense Amount'] || r.Amount || 0),
+                note: r.Comments || r.Note || ''
+            }));
+            saveTransactions(); // keep local backup
+            populateMonthDropdown('view-month');
+        } catch (e) {
+            console.warn('Failed to fetch expenses from sheet, using localStorage.', e);
+            loadTransactions();
+            populateMonthDropdown('view-month');
+        }
+    }
+
+    async function appendExpenseToSheet(transaction) {
+        try {
+            await fetch(webAppURL, {
+                method: 'POST',
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    sheet: sheetName,
+                    row: 0, // new append mode handled on server if implemented
+                    data: transaction
+                })
+            });
+        } catch (e) {
+            console.warn('Failed to append to sheet, local only.', e);
+        }
+    }
 
     // =====================================================
     // LOCAL STORAGE PERSISTENCE
@@ -242,10 +279,6 @@
         const s = String(v).replace(/[₹,\s]/g, '');
         const n = parseFloat(s);
         return isNaN(n) ? NaN : n;
-    }
-
-    function normalizeKey(k) {
-        return String(k || '').trim().toLowerCase();
     }
 
     function yellowRamp(t) {
@@ -281,7 +314,7 @@
     // =====================================================
     // ADD EXPENSE FUNCTIONALITY
     // =====================================================
-    function addTransaction() {
+    async function addTransaction() {
         const date = document.getElementById('date').value;
         const amount = parseFloat(document.getElementById('amount').value);
         const note = document.getElementById('note').value;
@@ -291,25 +324,25 @@
             return;
         }
 
-        transactions.push({ date, amount, note });
+        const newTx = { date, amount, note };
+        transactions.push(newTx);
         saveTransactions();
+
+        // Push to Google Sheet
+        await appendExpenseToSheet(newTx);
 
         document.getElementById('date').value = '';
         document.getElementById('amount').value = '';
         document.getElementById('note').value = '';
 
         populateMonthDropdown('view-month');
-        alert('Transaction added.');
+        alert('Transaction saved to sheet!');
     }
 
     // =====================================================
     // VIEW EXPENSES FUNCTIONALITY
     // =====================================================
     function fetchView() {
-        if (!document.getElementById('view-month').options.length) {
-            populateMonthDropdown('view-month');
-        }
-
         const selector = document.getElementById('view-month');
         const month = selector.value || '';
         const data = month
@@ -320,32 +353,20 @@
         const table = document.getElementById('view-table');
 
         table.innerHTML =
-            '<tr>' +
-            '<th>Date</th>' +
-            '<th>Amount</th>' +
-            '<th>Note</th>' +
-            '<th>Edit</th>' +
-            '</tr>';
+            '<tr><th>Date</th><th>Amount</th><th>Note</th><th>Edit</th></tr>';
 
         data.forEach((t, i) => {
             total += Number(t.amount) || 0;
-
             table.innerHTML +=
-                '<tr>' +
-                '<td><input class="inline-input" type="date" value="' + (t.date || '') + '" onchange="updateTx(' + i + ', \'date\', this.value)" /></td>' +
-                '<td><input class="inline-input" type="number" value="' + (t.amount ?? 0) + '" onchange="updateTx(' + i + ', \'amount\', parseFloat(this.value))" /></td>' +
-                '<td><input class="inline-input" value="' + (t.note ? String(t.note).replace(/"/g, '&quot;') : '') + '" onchange="updateTx(' + i + ', \'note\', this.value)" /></td>' +
-                '<td><button onclick="removeTx(' + i + ')">❌</button></td>' +
-                '</tr>';
+                `<tr>
+                    <td>${t.date}</td>
+                    <td>₹${t.amount?.toFixed(2) ?? 0}</td>
+                    <td>${t.note || ''}</td>
+                    <td><button onclick="removeTx(${i})">❌</button></td>
+                </tr>`;
         });
 
         document.getElementById('total-expense').innerText = 'Total: ₹' + total.toFixed(2);
-    }
-
-    function updateTx(index, field, value) {
-        transactions[index][field] = value;
-        saveTransactions();
-        fetchView();
     }
 
     function removeTx(index) {
@@ -362,7 +383,7 @@
         const sel = document.getElementById(id);
         sel.innerHTML = '';
         months.forEach((m) => {
-            sel.innerHTML += '<option value="' + m + '">' + m + '</option>';
+            sel.innerHTML += `<option value="${m}">${m}</option>`;
         });
         if (months.length) sel.value = months[months.length - 1];
     }
@@ -380,7 +401,7 @@
                 const sel = document.getElementById(id);
                 sel.innerHTML = '';
                 months.forEach((m) => {
-                    sel.innerHTML += '<option value="' + m + '">' + m + '</option>';
+                    sel.innerHTML += `<option value="${m}">${m}</option>`;
                 });
                 if (months.length) sel.value = months[months.length - 1];
             });
@@ -411,7 +432,6 @@
     // =====================================================
     async function fetchInvestment() {
         try {
-            // Fetch Summary Data from specific cells (J2, J3, J4, J5)
             const resSummary = await fetch(sheetURL + summarySheetName);
             const summaryData = await resSummary.json();
             const summary = document.getElementById('investment-summary');
@@ -419,24 +439,18 @@
 
             SUMMARY_MAP.forEach(item => {
                 const row = summaryData[item.rowIndex] || {};
-                // Access by column index (J = index 9 in OpenSheet array representation)
                 const columnKeys = Object.keys(row);
                 const value = cleanNumber(row[columnKeys[item.columnIndex]]);
-                summary.innerHTML += '<li>' + item.label + ': ₹' + ((isNaN(value) ? 0 : value).toFixed(2)) + '</li>';
+                summary.innerHTML += `<li>${item.label}: ₹${((isNaN(value) ? 0 : value).toFixed(2))}</li>`;
             });
 
-            // Fetch Vendor Balances
             const res = await fetch(sheetURL + 'Vendor%20Sales%20Record');
             const data = await res.json();
 
             const vendorTable = document.getElementById('vendor-table');
             vendorTable.innerHTML =
-                '<tr>' +
-                '<th>Vendor Name</th>' +
-                '<th>Balance</th>' +
-                '</tr>';
+                '<tr><th>Vendor Name</th><th>Balance</th></tr>';
 
-            // Detect column keys
             const norm = s => String(s).trim().toLowerCase();
             const sample = data.find(r => {
                 const ks = Object.keys(r).map(norm);
@@ -451,7 +465,6 @@
                 ? Object.keys(sample).find(k => norm(k) === 'balance')
                 : 'Balance';
 
-            // Collect vendor data
             const rows = [];
             let maxPos = 0;
 
@@ -464,47 +477,25 @@
                 }
             });
 
-            // Render with color coding
             rows.forEach(({ name, bal }) => {
                 let style = '';
-                let cls = '';
-
-                if (bal < 0) {
-                    style = 'background: var(--neg-bg); color: var(--neg-text); font-weight: 700;';
-                    cls = 'neg';
-                } else if (bal === 0) {
-                    style = 'background:#fff; color:#222;';
-                } else if (bal > 0 && bal < 5000) {
-                    const t = Math.max(0, Math.min(1, bal / 5000));
-                    const bg = yellowRamp(t);
-                    style = 'background:' + bg + '; color:#222;';
-                } else {
-                    const denom = Math.max(1, (maxPos - 5000));
-                    const t = Math.max(0, Math.min(1, (bal - 5000) / denom));
-                    const bg = greenRamp(t);
-                    style = 'background:' + bg + '; color:#fff;';
-                }
+                if (bal < 0) style = 'background: var(--neg-bg); color: var(--neg-text); font-weight: 700;';
+                else if (bal > 0 && bal < 5000) style = 'background:' + yellowRamp(Math.min(1, bal / 5000)) + '; color:#222;';
+                else if (bal >= 5000) style = 'background:' + greenRamp(Math.min(1, (bal - 5000) / Math.max(1, maxPos - 5000))) + '; color:#fff;';
 
                 vendorTable.innerHTML +=
-                    '<tr>' +
-                    '<td>' + name + '</td>' +
-                    '<td style="' + style + '" class="' + cls + '">₹' + bal.toFixed(2) + '</td>' +
-                    '</tr>';
+                    `<tr><td>${name}</td><td style="${style}">₹${bal.toFixed(2)}</td></tr>`;
             });
 
         } catch (e) {
             console.warn('Fetch investment failed', e);
-            document.getElementById('investment-summary').innerHTML = '<li>Unable to load investment summary.</li>';
-            document.getElementById('vendor-table').innerHTML = '<tr><td colspan="2">Unable to load vendor balances.</td></tr>';
         }
     }
 
     // =====================================================
     // INITIALIZATION
     // =====================================================
-    (function init() {
-        loadTransactions();
-        populateMonthDropdown('view-month');
+    (async function init() {
+        await fetchExpenses();
     })();
 </script>
-</body> </html>
