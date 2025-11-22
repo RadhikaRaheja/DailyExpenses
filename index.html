@@ -129,24 +129,28 @@
         <button onclick="switchTab('investment')">📈 Investment</button>
     </nav>
 
-    <!-- Add Expense -->
+     <!-- Add / Edit Section -->
     <div id="add" class="section active">
         <div class="field">
-            <label for="date">Date</label>
+            <label>Date</label>
             <input type="date" id="date" />
         </div>
         <div class="field">
-            <label for="amount">Expense Amount</label>
+            <label>Amount</label>
             <input type="number" id="amount" />
         </div>
         <div class="field">
-            <label for="note">Comments</label>
+            <label>Comments</label>
             <textarea id="note"></textarea>
         </div>
-        <button onclick="addTransaction()">Save</button>
-        <p class="muted">Entries sync with Google Sheet “Transactions”.</p>
-    </div>
 
+        <button id="saveBtn" onclick="addTransaction()">Save</button>
+        <button id="updateBtn" class="hidden" onclick="updateTransaction()">Update</button>
+        <button id="cancelBtn" class="hidden" onclick="cancelEdit()">Cancel</button>
+
+        <p class="muted">All entries are stored in your Google Sheet ("Transactions" tab).</p>
+    </div>
+    
     <!-- View -->
     <div id="view" class="section">
         <div class="field">
@@ -202,110 +206,121 @@
     // ==============================================
     // TRANSACTIONS SYNC
     // ==============================================
-    async function fetchExpenses() {
-        try {
-            const res = await fetch(`${webAppURL}?sheet=${sheetName}`);
-            const data = await res.json();
-            transactions = data.map(r => ({
-                date: r.Date || '',
-                amount: parseFloat(r.Amount || 0),
-                note: r.Note || r.Comments || ''
-            }));
-            saveTransactions();
-            populateMonthDropdown('view-month');
-        } catch (e) {
-            console.warn('Failed to fetch sheet data, using local backup.', e);
-            loadTransactions();
-            populateMonthDropdown('view-month');
-        }
-    }
+   // =================== FETCH FROM SHEET ===================
+async function fetchExpenses() {
+    const res = await fetch(`${webAppURL}?sheet=${sheetName}`);
+    const data = await res.json();
+    transactions = data.map((r,i)=>({
+        index: i,
+        date: r.Date,
+        amount: parseFloat(r.Amount),
+        note: r.Note || r.Comments || ''
+    })).filter(t => t.date && !isNaN(t.amount));
+    populateMonthDropdown('view-month');
+}
 
-    async function appendExpenseToSheet(transaction) {
-        try {
-            await fetch(webAppURL, {
-                method: 'POST',
-                body: JSON.stringify({ sheet: sheetName, data: transaction })
-            });
-        } catch (e) { console.warn('Failed to append to sheet', e); }
-    }
+// =================== ADD ===================
+async function addTransaction() {
+    const date = document.getElementById('date').value;
+    const amount = parseFloat(document.getElementById('amount').value);
+    const note = document.getElementById('note').value;
 
-    async function deleteExpenseFromSheet(index) {
-        try {
-            await fetch(`${webAppURL}?sheet=${sheetName}&row=${index}`, { method: 'DELETE' });
-        } catch (e) { console.warn('Failed to delete row', e); }
-    }
+    if(!date || isNaN(amount)){ alert("Please enter valid date and amount"); return; }
 
-    // ==============================================
-    // LOCAL STORAGE
-    // ==============================================
-    function loadTransactions() {
-        transactions = JSON.parse(localStorage.getItem('transactions_v2') || '[]');
-    }
-    function saveTransactions() {
-        localStorage.setItem('transactions_v2', JSON.stringify(transactions));
-    }
+    const tx = { date, amount, note };
+    await fetch(webAppURL, { method:'POST', body: JSON.stringify({ sheet: sheetName, data: tx }) });
 
-    // ==============================================
-    // ADD / VIEW / DELETE
-    // ==============================================
-    async function addTransaction() {
-        const date = document.getElementById('date').value;
-        const amount = parseFloat(document.getElementById('amount').value);
-        const note = document.getElementById('note').value;
+    alert("Transaction added!");
+    clearForm();
+    await fetchExpenses();
+}
 
-        if (!date || isNaN(amount)) {
-            alert('Enter valid date and amount');
-            return;
-        }
+// =================== EDIT ===================
+function startEdit(i) {
+    const tx = transactions[i];
+    document.getElementById('date').value = tx.date;
+    document.getElementById('amount').value = tx.amount;
+    document.getElementById('note').value = tx.note;
 
-        const newTx = { date, amount, note };
-        transactions.push(newTx);
-        saveTransactions();
-        await appendExpenseToSheet(newTx);
+    editIndex = i;
+    document.getElementById('saveBtn').classList.add('hidden');
+    document.getElementById('updateBtn').classList.remove('hidden');
+    document.getElementById('cancelBtn').classList.remove('hidden');
+    switchTab('add');
+}
 
-        document.getElementById('date').value = '';
-        document.getElementById('amount').value = '';
-        document.getElementById('note').value = '';
+async function updateTransaction() {
+    const updatedTx = {
+        date: document.getElementById('date').value,
+        amount: parseFloat(document.getElementById('amount').value),
+        note: document.getElementById('note').value
+    };
+    if(!updatedTx.date || isNaN(updatedTx.amount)){ alert("Invalid data"); return; }
 
-        populateMonthDropdown('view-month');
-        alert('Transaction saved!');
-    }
+    await fetch(webAppURL, {
+        method: 'PUT',
+        body: JSON.stringify({ sheet: sheetName, row: editIndex, data: updatedTx })
+    });
 
-    function removeTx(index) {
-        if (!confirm('Delete this transaction?')) return;
-        transactions.splice(index, 1);
-        saveTransactions();
-        deleteExpenseFromSheet(index);
-        fetchView();
-    }
+    alert("Transaction updated!");
+    clearForm();
+    await fetchExpenses();
+    switchTab('view');
+}
 
-    function populateMonthDropdown(id) {
-        const months = [...new Set(transactions.map(t => (t.date || '').substring(0,7)).filter(Boolean))].sort();
-        const sel = document.getElementById(id);
-        sel.innerHTML = '';
-        months.forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
-        if (months.length) sel.value = months[months.length - 1];
-    }
+function cancelEdit() {
+    clearForm();
+    switchTab('view');
+}
 
-    function fetchView() {
-        const selector = document.getElementById('view-month');
-        const month = selector.value || '';
-        const data = month ? transactions.filter(t => t.date && t.date.startsWith(month)) : transactions.slice();
-        let total = 0;
-        const table = document.getElementById('view-table');
-        table.innerHTML = '<tr><th>Date</th><th>Amount</th><th>Note</th><th>Delete</th></tr>';
+function clearForm() {
+    document.getElementById('date').value = '';
+    document.getElementById('amount').value = '';
+    document.getElementById('note').value = '';
+    editIndex = null;
+    document.getElementById('saveBtn').classList.remove('hidden');
+    document.getElementById('updateBtn').classList.add('hidden');
+    document.getElementById('cancelBtn').classList.add('hidden');
+}
 
-        data.forEach((t, i) => {
-            total += Number(t.amount) || 0;
-            table.innerHTML += `<tr>
+// =================== DELETE ===================
+async function removeTx(i) {
+    if(!confirm("Delete this transaction?")) return;
+    await fetch(`${webAppURL}?sheet=${sheetName}&row=${i}`, { method: 'DELETE' });
+    alert("Transaction deleted!");
+    await fetchExpenses();
+    fetchView();
+}
+
+// =================== VIEW ===================
+function populateMonthDropdown(id) {
+    const months = [...new Set(transactions.map(t => t.date.substring(0,7)))].sort();
+    const sel = document.getElementById(id);
+    sel.innerHTML = '';
+    months.forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
+    if(months.length) sel.value = months[months.length-1];
+    fetchView();
+}
+
+function fetchView() {
+    const month = document.getElementById('view-month').value;
+    const data = transactions.filter(t => t.date.startsWith(month));
+    let total = 0;
+    const table = document.getElementById('view-table');
+    table.innerHTML = `<tr><th>Date</th><th>Amount</th><th>Note</th><th>Edit</th><th>Delete</th></tr>`;
+    data.forEach((t,i) => {
+        total += t.amount;
+        table.innerHTML += `
+            <tr>
                 <td>${t.date}</td>
-                <td>₹${t.amount?.toFixed(2)}</td>
-                <td>${t.note || ''}</td>
-                <td><button onclick="removeTx(${i})">❌</button></td>
+                <td>₹${t.amount.toFixed(2)}</td>
+                <td>${t.note}</td>
+                <td><button onclick="startEdit(${t.index})">✏️</button></td>
+                <td><button onclick="removeTx(${t.index})">🗑️</button></td>
             </tr>`;
-        });
-        document.getElementById('total-expense').innerText = 'Total: ₹' + total.toFixed(2);
-    }
+    });
+    document.getElementById('total-expense').innerText = 'Total: ₹' + total.toFixed(2);
+}
 
     // ==============================================
     // PROFIT & INVESTMENT (READ-ONLY)
