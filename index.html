@@ -314,21 +314,15 @@
         try {
             const res = await fetch(sheetURL + 'Profit%20Sheet');
             const data = await res.json();
-            const months = [...new Set(data.map((r) => r.Month).filter(Boolean))];
-
-            ['profit-month', 'view-month'].forEach((id) => {
+            const months = [...new Set(data.map(r => r.Month).filter(Boolean))];
+            ['profit-month','view-month'].forEach(id => {
                 const sel = document.getElementById(id);
                 sel.innerHTML = '';
-                months.forEach((m) => {
-                    sel.innerHTML += `<option value="${m}">${m}</option>`;
-                });
-                if (months.length) sel.value = months[months.length - 1];
+                months.forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
+                if (months.length) sel.value = months[months.length-1];
             });
-
             fetchProfit();
-        } catch (e) {
-            console.warn('Profit month options failed', e);
-        }
+        } catch(e){ console.warn('Profit months failed', e); }
     }
 
     async function fetchProfit() {
@@ -336,16 +330,14 @@
             const month = document.getElementById('profit-month').value;
             const res = await fetch(sheetURL + 'Profit%20Sheet');
             const data = await res.json();
-            const row = data.find((r) => r.Month === month);
-            const val = cleanNumber(row?.Profit);
-
-            document.getElementById('profit-display').innerText = 'Profit: ₹' + ((isNaN(val) ? 0 : val).toFixed(2));
-        } catch (e) {
-            console.warn('Fetch profit failed', e);
-            document.getElementById('profit-display').innerText = 'Profit: ₹0.00';
-        }
+            const row = data.find(r => r.Month === month);
+            const val = parseFloat((row?.Profit || '0').replace(/[₹,]/g,''));
+            document.getElementById('profit-display').innerText = 'Profit: ₹' + (isNaN(val)?0:val).toFixed(2);
+        } catch(e){ console.warn('Profit fetch failed', e); }
     }
 
+    function yellowRamp(t){const a={r:255,g:249,b:196},b={r:255,g:193,b:7};return `rgb(${Math.round(a.r+(b.r-a.r)*t)},${Math.round(a.g+(b.g-a.g)*t)},${Math.round(a.b+(b.b-a.b)*t)})`; }
+    function greenRamp(t){const a={r:200,g:230,b:201},b={r:46,g:125,b:50};return `rgb(${Math.round(a.r+(b.r-a.r)*t)},${Math.round(a.g+(b.g-a.g)*t)},${Math.round(a.b+(b.b-a.b)*t)})`; }
 
     async function fetchInvestment() {
         try {
