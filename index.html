@@ -189,35 +189,13 @@ async function fetchExpenses() {
 }
 
 // Populate month dropdown
-// Helper: Convert "YYYY-MM" → "Mon YYYY" (e.g., "2025-11" → "Nov 2025")
-function formatMonthLabel(ym) {
-    const [year, month] = ym.split('-');
-    const date = new Date(`${ym}-01`);
-    return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
-}
-
-// Populate month dropdown with pretty labels
-function populateMonthDropdown(id) {
-    // Extract unique months from all transactions (YYYY-MM format)
-    const months = [...new Set(transactions.map(t => t.date.substring(0, 7)))].sort();
-
-    const sel = document.getElementById(id);
+function populateMonthDropdown() {
+    const months = [...new Set(transactions.map(t => t.date.substring(0,7)))].sort();
+    const sel = document.getElementById('view-month');
     sel.innerHTML = '';
-
-    if (months.length === 0) {
-        sel.innerHTML = '<option value="">No data</option>';
-        return;
-    }
-
-    months.forEach(m => {
-        const label = formatMonthLabel(m);
-        sel.innerHTML += `<option value="${m}">${label}</option>`;
-    });
-
-    // Default to latest month
-    sel.value = months[months.length - 1];
+    months.forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
+    if(months.length) sel.value = months[months.length-1];
     fetchView();
-}
 }
 
 // Add new transaction
