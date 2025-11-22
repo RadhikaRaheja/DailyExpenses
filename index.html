@@ -225,21 +225,40 @@ async function addTransaction() {
 }
 
 // Show transactions for selected month
+// Helper: format ISO or raw date into "dd MMM yyyy"
+function formatDisplayDate(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (isNaN(d)) return dateStr; // fallback in case parsing fails
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+// Show transactions for selected month (with clean date display)
 function fetchView() {
     const month = document.getElementById('view-month').value;
-    const data = transactions.filter(t => t.date.startsWith(month));
+    if (!month) return;
+
+    const data = transactions.filter(t => t.date && t.date.startsWith(month));
     let total = 0;
     const table = document.getElementById('view-table');
+
+    if (data.length === 0) {
+        table.innerHTML = '<tr><td colspan="3">No transactions for this month.</td></tr>';
+        document.getElementById('total-expense').innerText = 'Total: ₹0';
+        return;
+    }
+
     table.innerHTML = `<tr><th>Date</th><th>Amount</th><th>Comments</th></tr>`;
     data.forEach(t => {
         total += t.amount;
         table.innerHTML += `
             <tr>
-                <td>${t.date}</td>
+                <td>${formatDisplayDate(t.date)}</td>
                 <td>₹${t.amount.toFixed(2)}</td>
                 <td>${t.note}</td>
             </tr>`;
     });
+
     document.getElementById('total-expense').innerText = 'Total: ₹' + total.toFixed(2);
 }
 
