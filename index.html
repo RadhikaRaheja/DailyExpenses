@@ -129,7 +129,7 @@
         <button onclick="switchTab('investment')">📈 Investment</button>
     </nav>
 
-     <!-- Add / Edit Section -->
+    <!-- Add / Edit Section -->
     <div id="add" class="section active">
         <div class="field">
             <label>Date</label>
@@ -150,17 +150,17 @@
 
         <p class="muted">All entries are stored in your Google Sheet ("Transactions" tab).</p>
     </div>
-    
-    <!-- View -->
+
+    <!-- View Section -->
     <div id="view" class="section">
         <div class="field">
-            <label for="view-month">Month & Year</label>
+            <label>Select Month</label>
             <select id="view-month" onchange="fetchView()"></select>
         </div>
         <h3 id="total-expense">Total: ₹0</h3>
         <table id="view-table"></table>
     </div>
-
+    
     <!-- Profit -->
     <div id="profit" class="section">
         <div class="field">
@@ -201,14 +201,12 @@
         { label: 'Total Amount Invested', rowIndex: 3, columnIndex: 9 }
     ];
 
-    let transactions = [];
+  let transactions = [];
+let editIndex = null;
 
-    // ==============================================
-    // TRANSACTIONS SYNC
-    // ==============================================
-   // =================== FETCH FROM SHEET ===================
+// =================== FETCH TRANSACTIONS ===================
 async function fetchExpenses() {
-    const res = await fetch(`${webAppURL}?sheet=${sheetName}`);
+    const res = await fetch(`${webAppURL}?sheet=${sheetTransactions}`);
     const data = await res.json();
     transactions = data.map((r,i)=>({
         index: i,
@@ -219,7 +217,7 @@ async function fetchExpenses() {
     populateMonthDropdown('view-month');
 }
 
-// =================== ADD ===================
+// =================== ADD TRANSACTION ===================
 async function addTransaction() {
     const date = document.getElementById('date').value;
     const amount = parseFloat(document.getElementById('amount').value);
@@ -228,14 +226,14 @@ async function addTransaction() {
     if(!date || isNaN(amount)){ alert("Please enter valid date and amount"); return; }
 
     const tx = { date, amount, note };
-    await fetch(webAppURL, { method:'POST', body: JSON.stringify({ sheet: sheetName, data: tx }) });
+    await fetch(webAppURL, { method:'POST', body: JSON.stringify({ sheet: sheetTransactions, data: tx }) });
 
     alert("Transaction added!");
     clearForm();
     await fetchExpenses();
 }
 
-// =================== EDIT ===================
+// =================== EDIT TRANSACTION ===================
 function startEdit(i) {
     const tx = transactions[i];
     document.getElementById('date').value = tx.date;
@@ -259,7 +257,7 @@ async function updateTransaction() {
 
     await fetch(webAppURL, {
         method: 'PUT',
-        body: JSON.stringify({ sheet: sheetName, row: editIndex, data: updatedTx })
+        body: JSON.stringify({ sheet: sheetTransactions, row: editIndex, data: updatedTx })
     });
 
     alert("Transaction updated!");
@@ -283,15 +281,44 @@ function clearForm() {
     document.getElementById('cancelBtn').classList.add('hidden');
 }
 
-// =================== DELETE ===================
+// =================== DELETE TRANSACTION ===================
 async function removeTx(i) {
     if(!confirm("Delete this transaction?")) return;
-    await fetch(`${webAppURL}?sheet=${sheetName}&row=${i}`, { method: 'DELETE' });
+    await fetch(`${webAppURL}?sheet=${sheetTransactions}&row=${i}`, { method: 'DELETE' });
     alert("Transaction deleted!");
     await fetchExpenses();
     fetchView();
 }
 
+// =================== VIEW ===================
+function populateMonthDropdown(id) {
+    const months = [...new Set(transactions.map(t => t.date.substring(0,7)))].sort();
+    const sel = document.getElementById(id);
+    sel.innerHTML = '';
+    months.forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
+    if(months.length) sel.value = months[months.length-1];
+    fetchView();
+}
+
+function fetchView() {
+    const month = document.getElementById('view-month').value;
+    const data = transactions.filter(t => t.date.startsWith(month));
+    let total = 0;
+    const table = document.getElementById('view-table');
+    table.innerHTML = `<tr><th>Date</th><th>Amount</th><th>Note</th><th>Edit</th><th>Delete</th></tr>`;
+    data.forEach((t,i) => {
+        total += t.amount;
+        table.innerHTML += `
+            <tr>
+                <td>${t.date}</td>
+                <td>₹${t.amount.toFixed(2)}</td>
+                <td>${t.note}</td>
+                <td><button onclick="startEdit(${t.index})">✏️</button></td>
+                <td><button onclick="removeTx(${t.index})">🗑️</button></td>
+            </tr>`;
+    });
+    document.getElementById('total-expense').innerText = 'Total: ₹' + total.toFixed(2);
+}
 // =================== VIEW ===================
 function populateMonthDropdown(id) {
     const months = [...new Set(transactions.map(t => t.date.substring(0,7)))].sort();
